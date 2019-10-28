@@ -15,7 +15,7 @@ import woe.eval as eval
 
 def get_woe_bin(df, target_name, is_changed=True, file_name=None):
     df.rename(columns={target_name: 'target'}, inplace=True)
-    n_positive = sum(df['label'])
+    n_positive = sum(df['target'])
     n_negtive = len(df) - n_positive
     civ_dict = {}
     woe_fp = {}
@@ -37,6 +37,8 @@ def get_woe_bin(df, target_name, is_changed=True, file_name=None):
     if is_changed:
         changed_df = df.copy()
         for column in list(df.columns):
+            if column == 'target':
+                continue
             changed_df[column] = woe_fp[column].woe_trans(df[column], civ_dict[column])
     else:
         changed_df = None

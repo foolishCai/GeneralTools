@@ -11,7 +11,7 @@
 
 import os
 import logging
-from ToolBars.configs import log_config
+from configs import log_config
 
 class LogUtil(object):
     def __init__(self):

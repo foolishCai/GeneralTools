@@ -9,7 +9,7 @@ note:
 '''
 
 
-from ToolBars.configs.robot_config import RobotConfig
+from configs.robot_config import RobotConfig
 import requests
 import json
 

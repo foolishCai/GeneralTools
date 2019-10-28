@@ -10,7 +10,7 @@ note: 数据,模型加载与保存
 
 
 import pickle
-from ToolBars.BaseUtils.log_util import LogUtil
+from BaseUtils.log_util import LogUtil
 
 log = LogUtil()
 
