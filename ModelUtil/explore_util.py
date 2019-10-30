@@ -57,6 +57,8 @@ class FeatureExplore(object):
         self.explore_nulls()
         self.explore_single_value()
         self.explore_datetime_cols()
+        if len(list(self.df.columns[self.df.dtypes == 'object']))==0:
+            self.get_corr()
 
     def explore_objects(self):
         init_object_cols = list(self.df.columns[self.df.dtypes == 'object'])
@@ -133,6 +135,7 @@ class FeatureExplore(object):
 
         # feat_weak_corr内任意两个特征相关性绝对值小于0.7
         self.high_corr_df = pd.DataFrame(data={"col1": col1, "col2": col2, "corr_value": corr_value})
+        print(format_dataframe(self.high_corr_df))
 
 
 

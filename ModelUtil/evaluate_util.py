@@ -59,7 +59,10 @@ def get_ks_table(y_true, y_pred, gap=None):
 def get_lift_table(y_true, y_pred, groupNum=None):
     if groupNum is None:
         groupNum = 10
-
+    if isinstance(y_true, pd.Series):
+        y_true = y_true.tolist()
+    if isinstance(y_true, pd.DataFrame):
+        y_true = y_true.iloc[:, 0].tolist()
     N = len(y_true)
     tags = np.linspace(-1, N, groupNum + 1, endpoint=True).astype(int)
     labels = np.arange(1, groupNum + 1)
@@ -87,7 +90,6 @@ def get_lift_table(y_true, y_pred, groupNum=None):
     union_df['bad_cumsum_ratio'] = union_df['bad_cnt'].cumsum() / pos
     union_df['bad_cumsum_ratio'] = union_df['bad_cumsum_ratio'].map(lambda x: round(x, 4))
     union_df = union_df[['top_range', 'score_range', 'total', 'bad_cnt', 'bad_ratio', 'bad_cumsum_ratio', 'lift']]
-
     return union_df
 
 

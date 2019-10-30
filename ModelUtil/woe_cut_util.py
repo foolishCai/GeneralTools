@@ -13,8 +13,9 @@ import woe.feature_process as fp
 import woe.eval as eval
 
 
-def get_woe_bin(df, target_name, is_changed=True, file_name=None):
-    df.rename(columns={target_name: 'target'}, inplace=True)
+def get_woe_bin(X, y, is_changed=True, file_name=None, is_tag=False):
+    df = X.copy()
+    df['target'] = y
     n_positive = sum(df['target'])
     n_negtive = len(df) - n_positive
     civ_dict = {}
@@ -36,10 +37,21 @@ def get_woe_bin(df, target_name, is_changed=True, file_name=None):
 
     if is_changed:
         changed_df = df.copy()
+        changed_df = changed_df.drop(['target'], axis=1)
         for column in list(df.columns):
             if column == 'target':
                 continue
             changed_df[column] = woe_fp[column].woe_trans(df[column], civ_dict[column])
+        if is_tag:
+            for column in list(df.columns):
+                woe_list = [str(i) for i in civ_dict[column].woe_list]
+                split_list = civ_dict[column].split_list
+                if len(split_list) == 0:
+                    continue
+                changed_df[column] = changed_df[column].map(
+                    lambda x: '(' + str(split_list[-1]) + ',' + 'inf]' if x == woe_list[-1]
+                    else '(' + str(split_list[woe_list.index(x) - 1]) + ',' + str(split_list[woe_list.index(x)]) + ']')
+
     else:
         changed_df = None
 

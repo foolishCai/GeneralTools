@@ -15,7 +15,7 @@ from collections import Counter
 from imblearn.over_sampling import RandomOverSampler, SMOTE, ADASYN
 from imblearn.under_sampling import NearMiss, TomekLinks, EditedNearestNeighbours
 
-from ToolBars.configs import log
+from configs import log
 
 def model_resampling_pipeline(Xtrain, Xtest, y_train, y_test, model):
     '''

@@ -4,85 +4,96 @@
 @author: Cai
 @contact: chenyuwei_03@hotmail.com
 @application:
-@time: 2019/10/22 16:11
-@desc:
+@time: 2019/10/30 10:24
+@desc: 尝试自己写一下best-ks，大工程啊啊啊啊啊
 '''
 
-import pandas as pd
+import numpy as np
+from configs import log
+from interval import Interval
+from ModelUtil.evaluate_util import get_woe_iv
 
 
-def best_ks_box(data, var_name, target_name, box_num=10):
-    data = data[[var_name, target_name]]
-    """
-    KS值函数
-    """
+class KsCutUtil(object):
+    def __init__(self, df, target_name, limit_ratio, bins=5):
+        self.df = df.copy()
+        self.target_name = target_name
+        self.limit_num = np.floor(len(self.df) * limit_ratio)
+        self.bins = bins
+        self.cut_point = {}
+        self.log = log
 
-    def ks_bin(data_, limit):
-        g = data_.iloc[:, 1].value_counts()[0]
-        b = data_.iloc[:, 1].value_counts()[1]
-        data_cro = pd.crosstab(data_.iloc[:, 0], data_.iloc[:, 1])
-        data_cro[0] = data_cro[0] / g
-        data_cro[1] = data_cro[1] / b
-        data_cro_cum = data_cro.cumsum()
-        ks_list = abs(data_cro_cum[1] - data_cro_cum[0])
-        ks_list_index = ks_list.nlargest(len(ks_list)).index.tolist()
-        for i in ks_list_index:
-            data_1 = data_[data_.iloc[:, 0] <= i]
-            data_2 = data_[data_.iloc[:, 0] > i]
-            if len(data_1) >= limit and len(data_2) >= limit:
-                break
-        return i
-
-    # 测试： ks_bin(data,data.shape[0]/7)
-
-    """
-    区间选取函数
-    """
-
-    def ks_zone(data_, list_):
-        list_zone = list()
-        list_.sort()
-        n = 0
-        for i in list_:
-            m = sum(data_.iloc[:, 0] <= i) - n
-            n = sum(data_.iloc[:, 0] <= i)
-            list_zone.append(m)
-        list_zone.append(50000 - sum(list_zone))
-        max_index = list_zone.index(max(list_zone))
-        if max_index == 0:
-            rst = [data_.iloc[:, 0].unique().min(), list_[0]]
-        elif max_index == len(list_):
-            rst = [list_[-1], data_.iloc[:, 0].unique().max()]
+    # 取得max_ks, 循环得到cutPoints
+    def ks_bin(self, df, feature_name):
+        total_good = df[self.target_name].value_counts()[0]
+        total_bad = df[self.target_name].value_counts()[1]
+        if total_bad>0 and total_good>0:
+            log.info("这是变量{}第几次分箱：{}".format(feature_name, 1 + len(self.cut_point[feature_name])))
+            log.info("本次分箱原始好坏样本比为：{} vs {}".format(total_good, total_bad))
         else:
-            rst = [list_[max_index - 1], list_[max_index]]
-        return rst
+            log.info("这是变量{}第几次分箱：{}".format(feature_name, 1 + len(self.cut_point[feature_name])))
+            log.info("本次分箱失败，y标签一致")
+            return
+        data_cro = df[self.target_name].groupby([df[feature_name], df[self.target_name]]).count()
+        data_cro = data_cro.unstack()
+        data_cro.columns = ['good', 'bad']
+        data_cro = data_cro.fillna(0)
+        data_cro['good_ratio'] = data_cro.good/total_good
+        data_cro['bad_ratio'] = data_cro.bad/total_bad
+        data_cro['good_cumsum'] = data_cro.good_ratio.cumsum()
+        data_cro['bad_cumsum'] = data_cro.bad_ratio.cumsum()
+        data_cro['ks_abs'] = data_cro.apply(lambda x: np.abs(x.good_cumsum - x.bad_cumsum), axis=1)
+        ks_index_list = data_cro.sort_values(by='ks_abs', ascending=False).index.tolist()
+        for index in ks_index_list:
+            data_1 = df[df[feature_name] <= index]
+            data_2 = df[df[feature_name] > index]
+            if len(data_1) >= self.limit_num and len(data_2) >= self.limit_num:
+                self.cut_point[feature_name].append(index)
+                if len(self.cut_point[feature_name]) == self.bins - 1:
+                    return
+                else:
+                    if len(data_1) > len(data_2) and len(data_1[self.target_name].unique()) == 2 and len(data_1[feature_name].unique())>1:
+                        self.ks_bin(df=data_1, feature_name=feature_name)
+                        return
+                    elif len(data_2) > len(data_1) and len(data_2[self.target_name].unique()) == 2 and len(data_2[feature_name].unique())>1:
+                        self.ks_bin(df=data_2, feature_name=feature_name)
+                        return
+            elif len(data_1) >= self.limit_num and len(data_1[self.target_name].unique()) == 2 and len(data_1[feature_name].unique())>1:
+                self.ks_bin(df=data_1, feature_name=feature_name)
+                return
+            elif len(data_2) >= self.limit_num and len(data_2[self.target_name].unique()) == 2 and len(data_2[feature_name].unique())>1:
+                self.ks_bin(df=data_2, feature_name=feature_name)
+                return
+            else:
+                return
 
-    #    测试： ks_zone(data_,[23])    #左开右闭
+    # 取得分箱区间
+    def cut_bins(self, feature_name):
+        cutPoints = self.cut_point[feature_name]
+        cutPoints = list(set(cutPoints))
+        cutPoints.extend([float('-inf'), float('inf')])
+        cutPoints.sort()
+        bin_list = [Interval(cutPoints[i], cutPoints[i+1], lower_closed=False) for i in range(len(cutPoints)-1)]
+        self.df['CutBin_'+feature_name] = self.df[feature_name].map(lambda x: str(bin_list[[x in i for i in bin_list].index(True)]))
 
-    data_ = data.copy()
-    limit_ = data.shape[0] / 20  # 总体的5%
-    """"
-    循环体
-    """
-    zone = list()
-    for i in range(box_num - 1):
-        ks_ = ks_bin(data_, limit_)
-        zone.append(ks_)
-        new_zone = ks_zone(data, zone)
-        data_ = data[(data.iloc[:, 0] > new_zone[0]) & (data.iloc[:, 0] <= new_zone[1])]
+    # 计算woe值
+    def get_woe_iv(self, feature_name):
+        self.bin_reault = {}
+        self.bin_reault[feature_name] = get_woe_iv(self.df, 'CutBin_'+feature_name, self.target_name)
 
-    """
-    构造分箱明细表
-    """
-    # zone.append(data.iloc[:, 0].unique().max())
-    # zone.append(data.iloc[:, 0].unique().min())
-    zone.sort()
-    # df_ = pd.DataFrame(columns=[0, 1])
-    # for i in range(len(zone) - 1):
-    #     if i == 0:
-    #         data_ = data[(data.iloc[:, 0] >= zone[i]) & (data.iloc[:, 0] <= zone[i + 1])]
-    #     else:
-    #         data_ = data[(data.iloc[:, 0] > zone[i]) & (data.iloc[:, 0] <= zone[i + 1])]
-    #     data_cro = pd.crosstab(data_.iloc[:, 0], data_.iloc[:, 1])
-    #     df_.loc['{0}-{1}'.format(data_cro.index.min(), data_cro.index.max())] = data_cro.apply(sum)
-    return zone
+    # 用woe值代替原来的连续值
+    def change_origin_value(self, feature_name):
+        self.df[feature_name] = self.df['CutBin_'+feature_name].map(lambda x: self.bin_reault[feature_name]['WOE'][x]['WOE'])
+
+
+    def main(self, not_need_cut=[], is_change=True):
+        for column in list(self.df.columns):
+            if column not in not_need_cut:
+                data = self.df.copy()
+                self.cut_point[column] = []
+                self.ks_bin(data, column)
+                self.cut_bins(column)
+                self.get_woe_iv(column)
+                if is_change:
+                    self.change_origin_value()
+
