@@ -32,21 +32,6 @@ class LogUtil(object):
         ch.setFormatter(fmt=formatter)
         self.logger.addHandler(ch)
 
-        # self.log_path = log_config['log_path']
-        # self.log_name = log_config['log_name']
-        # logging.basicConfig(level=logging.INFO,
-        #                     format=formatter,
-        #                     datefmt='%Y-%m-%d %H:%M:%S',
-        #                     filename=os.path.join(self.log_path, self.log_name),
-        #                     filemode='w')
-        #
-        # # 输出日志到shell
-        # console = logging.StreamHandler()
-        # console.setLevel(logging.INFO)
-        # formatter = logging.Formatter(formatter)
-        # console.setFormatter(formatter)
-        # logging.getLogger(log_name).addHandler(console)
-
     def info(self, msg):
         msg = str(msg)
         self.logger.info(msg)

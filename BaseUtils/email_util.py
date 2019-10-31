@@ -5,36 +5,48 @@
 @contact: chenyuwei_03@hotmail.com
 @application:
 @time: 2019/10/15 13:50
-@desc:
+@desc: 邮件发送编写
 '''
-
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
 
 import smtplib
 from email.mime.text import MIMEText
-from email.header import Header
+from configs import email_config
+from email.mime.multipart import MIMEMultipart
 
-mail_host = "smtp.qq.com"  # 设置服务器
-mail_user = "XXX"  # 用户名
-mail_pass = "YYY"  # 三方邮箱口令
-sender = 'bbbbb.qq.com'  # 发送者邮箱
-receivers = ['bbbbbbb.qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+from configs import log
 
+class EmailUtil(object):
+    def __init__(self, sender_emails=None):
+        self.email_host = email_config['mail_host']
+        self.email_port = email_config['mail_port']
+        self.email_pwd = email_config['mail_pwd']
+        self.user_name = email_config['mail_sender']
+        self.log = log
+        if isinstance(sender_emails, str):
+            self.sender = sender_emails
+        elif isinstance(sender_emails, list):
+            self.sender = ','.join(sender_emails)
+        else:
+            print("没有收件人列表，请检查！！！")
 
-class Email():
-    def __init__(self, msg=''):
-        versionDsc = '您好！有新的IPA包可以下载，下载地址...\n%s\n' % msg
-        message = MIMEText(versionDsc, 'plain', 'utf-8')
-        message['From'] = Header("某某某有限公司", 'utf-8')
-        message['To'] = Header("某某某", 'utf-8')
-        subject = '此邮件来自自动化打包'  #邮件来源
-        message['Subject'] = Header(subject, 'utf-8')  #编码方式
+    def get_mail(self, subject, text,  is_attach=False, file_path=None):
+        msg = MIMEMultipart()
+        if is_attach:
+            if file_path is None:
+                print("请添加附件的文件地址！！！")
+            att = MIMEText(open(file_path).read())
+            att["Content-Type"] = 'application/octet-stream'
+            att["Content-Disposition"] = 'attachment; filename="%s"' % file_path
+            msg.attach(att)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(text))
+        msg['From'] = self.user_name
+        msg['To'] = self.sender
+        smtp = smtplib.SMTP(self.email_host, port=self.email_port)
+        smtp.login(self.user_name, self.email_pwd)
         try:
-            smtpObj = smtplib.SMTP()
-            smtpObj.connect(mail_host, 25)  # 25 为 SMTP 端口号
-            smtpObj.login(mail_user, mail_pass)
-            smtpObj.sendmail(sender, receivers, message.as_string())
-            print("邮件发送成功")
-        except smtplib.SMTPException as e:
-            print("Error: 无法发送邮件" + str(e))
+            smtp.sendmail(self.user_name, self.sender, msg.as_string())
+            smtp.quit()
+            print('email send success.')
+        except Exception as e:
+            self.log.info("ERROR!!!-{}".format(e))
