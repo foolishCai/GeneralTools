@@ -12,65 +12,67 @@ import numpy as np
 from configs import log
 from interval import Interval
 from ModelUtil.evaluate_util import get_woe_iv
+import queue
 
 
 class KsCutUtil(object):
-    def __init__(self, df, target_name, limit_ratio, bins=5):
-        self.df = df.copy()
+    def __init__(self, df, target_name, limit_ratio, bins=5, not_need_cut=None, special_dict={}):
+        if not_need_cut is not None:
+            self.df = df.drop(not_need_cut, axis=1)
+        else:
+            self.df = df.copy()
         self.target_name = target_name
         self.limit_num = np.floor(len(self.df) * limit_ratio)
         self.bins = bins
         self.cut_point = {}
         self.log = log
+        self.global_good = self.df[self.target_name].value_counts()[0]
+        self.global_bad = self.df[self.target_name].value_counts()[1]
+        self.special_dict = special_dict
 
     # 取得max_ks, 循环得到cutPoints
     def ks_bin(self, df, feature_name):
-        total_good = df[self.target_name].value_counts()[0]
-        total_bad = df[self.target_name].value_counts()[1]
-        if total_bad>0 and total_good>0:
-            log.info("这是变量{}第几次分箱：{}".format(feature_name, 1 + len(self.cut_point[feature_name])))
-            log.info("本次分箱原始好坏样本比为：{} vs {}".format(total_good, total_bad))
-        else:
-            log.info("这是变量{}第几次分箱：{}".format(feature_name, 1 + len(self.cut_point[feature_name])))
-            log.info("本次分箱失败，y标签一致")
-            return
+        log.info("这是变量{}第{}次分箱".format(feature_name, 1 + len(self.cut_point[feature_name])))
         data_cro = df[self.target_name].groupby([df[feature_name], df[self.target_name]]).count()
         data_cro = data_cro.unstack()
         data_cro.columns = ['good', 'bad']
         data_cro = data_cro.fillna(0)
-        data_cro['good_ratio'] = data_cro.good/total_good
-        data_cro['bad_ratio'] = data_cro.bad/total_bad
+        data_cro['good_ratio'] = data_cro.good/self.global_good
+        data_cro['bad_ratio'] = data_cro.bad/self.global_bad
         data_cro['good_cumsum'] = data_cro.good_ratio.cumsum()
         data_cro['bad_cumsum'] = data_cro.bad_ratio.cumsum()
         data_cro['ks_abs'] = data_cro.apply(lambda x: np.abs(x.good_cumsum - x.bad_cumsum), axis=1)
         ks_index_list = data_cro.sort_values(by='ks_abs', ascending=False).index.tolist()
         for index in ks_index_list:
-            data_1 = df[df[feature_name] <= index]
-            data_2 = df[df[feature_name] > index]
-            if len(data_1) >= self.limit_num and len(data_2) >= self.limit_num:
+            flag1_len_data = len(df[df[feature_name] <= index]) > self.limit_num
+            flag2_len_data = len(df[df[feature_name] > index]) > self.limit_num
+            flag1_label = len(df[df[feature_name] <= index][self.target_name].unique()) > 1
+            flag2_label = len(df[df[feature_name] > index][self.target_name].unique()) > 1
+            flag1_feature = len(df[df[feature_name] <= index][feature_name].unique()) > 1
+            flag2_feature = len(df[df[feature_name] > index][feature_name].unique()) > 1
+            if flag1_len_data and flag2_len_data and flag1_label and flag2_label:
                 self.cut_point[feature_name].append(index)
-                if len(self.cut_point[feature_name]) == self.bins - 1:
+                if len(self.cut_point[feature_name]) + 1 >= self.bins:
+                    return
+                if flag1_feature:
+                    self.bins_queue.put((df[df[feature_name] <= index][feature_name].min(), index))
+                elif flag2_feature:
+                    self.bins_queue.put((index, df[df[feature_name] > index][feature_name].max()))
+                if not self.bins_queue.empty():
+                    min_value, max_value = self.bins_queue.get()
+                    df = df.query('{} > {} and {} <= {}'.format(feature_name, min_value, feature_name, max_value))
+                    log.info("分箱的数据范围是：({},{}]".format(min_value, max_value))
+                    self.ks_bin(df, feature_name)
                     return
                 else:
-                    if len(data_1) > len(data_2) and len(data_1[self.target_name].unique()) == 2 and len(data_1[feature_name].unique())>1:
-                        self.ks_bin(df=data_1, feature_name=feature_name)
-                        return
-                    elif len(data_2) > len(data_1) and len(data_2[self.target_name].unique()) == 2 and len(data_2[feature_name].unique())>1:
-                        self.ks_bin(df=data_2, feature_name=feature_name)
-                        return
-            elif len(data_1) >= self.limit_num and len(data_1[self.target_name].unique()) == 2 and len(data_1[feature_name].unique())>1:
-                self.ks_bin(df=data_1, feature_name=feature_name)
-                return
-            elif len(data_2) >= self.limit_num and len(data_2[self.target_name].unique()) == 2 and len(data_2[feature_name].unique())>1:
-                self.ks_bin(df=data_2, feature_name=feature_name)
-                return
+                    return
             else:
-                return
+                continue
 
     # 取得分箱区间
     def cut_bins(self, feature_name):
         cutPoints = self.cut_point[feature_name]
-        cutPoints = list(set(cutPoints))
+        cutPoints = list(set(cutPoints)) + self.special_dict[feature_name]
         cutPoints.extend([float('-inf'), float('inf')])
         cutPoints.sort()
         bin_list = [Interval(cutPoints[i], cutPoints[i+1], lower_closed=False) for i in range(len(cutPoints)-1)]
@@ -86,14 +88,25 @@ class KsCutUtil(object):
         self.df[feature_name] = self.df['CutBin_'+feature_name].map(lambda x: self.bin_reault[feature_name]['WOE'][x]['WOE'])
 
 
-    def main(self, not_need_cut=[], is_change=True):
+    def main(self, is_change=True):
         for column in list(self.df.columns):
-            if column not in not_need_cut:
-                data = self.df.copy()
-                self.cut_point[column] = []
-                self.ks_bin(data, column)
-                self.cut_bins(column)
-                self.get_woe_iv(column)
-                if is_change:
-                    self.change_origin_value()
+            if column == self.target_name:
+                continue
+            self.cut_point[column] = []
+            self.bins_queue = queue.Queue()
+            df = self.df[~self.df[column].isin(self.special_dict[column])]
+            log.info("分箱的数据范围是：[{},{}]".format(df[feature_name].min(), df[feature_name].max()))
+            self.ks_bin(df, column)
+            self.cut_bins(column)
+            self.get_woe_iv(column)
+            if is_change:
+                self.change_origin_value(column)
 
+
+import pandas as pd
+df = pd.read_csv("/Users/cai/Desktop/pythonProjects/github_FoolishCai/GeneralTools/notImportance/test.txt", sep="|")
+
+feature_name = 'ft_gezhen_multi_loan_score_0'
+target_name = 'label'
+kcu = KsCutUtil(df[['ft_gezhen_multi_loan_score_0','label']], 'label', limit_ratio=0.05, bins=8, special_dict={'ft_gezhen_multi_loan_score_0': [-1]})
+kcu.main(is_change=False)

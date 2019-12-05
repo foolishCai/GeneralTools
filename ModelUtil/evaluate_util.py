@@ -22,16 +22,20 @@ def get_ks_auc(y_pred, y_true):
 
 def get_ks_table(y_true, y_pred, gap=None):
     _result = pd.DataFrame(columns=['y_true', 'y_pred'])
+    if isinstance(y_true, pd.Series):
+        y_true = y_true.tolist()
+    if isinstance(y_true, pd.DataFrame):
+        y_true = y_true.iloc[:, 0].tolist()
     _result['y_true'] = y_true
     _result['y_pred'] = y_pred
     if gap is None:
-        gap = 0.01
+        gap = 0.1
 
     score_df = pd.DataFrame(columns=['score_theshold', 'total', 'bad_cnt', 'good_cnt', 'accum_bad_cnt',
                                      'accum_total_ratio', 'accum_bad_ratio', 'TPR', 'FPR'])
     total_bad = _result.y_true.sum()
     total_good = _result.y_true.count() - _result.y_true.sum()
-    for i in range(100, 0, -int(gap*100)):
+    for i in range(100, -1, -int(gap*100)):
         tmp_dict = {}
         min_ = round(i / 100, 2)
         max_ = round(min_ + gap, 2)
@@ -43,8 +47,8 @@ def get_ks_table(y_true, y_pred, gap=None):
         tmp_dict['accum_bad_cnt'] = len(_result[(_result.y_pred >= min_) & (_result.y_true == 1)])
         if len(_result[(_result.y_pred >= min_)]) == 0:
             continue
-        tmp_dict['accum_bad_ratio'] = round(tmp_dict['accum_bad_cnt'] / len(_result[_result.y_pred >= min_]), 4)
-        tmp_dict['accum_total_ratio'] = round(len(_result[(_result.y_pred >= min_)]) / len(_result), 4)
+        tmp_dict['accum_bad_ratio'] = round(tmp_dict['accum_bad_cnt'] / len(_result[_result.y_true == 1]), 4)
+        tmp_dict['accum_total_ratio'] = round(len(_result[_result.y_pred >= min_]) / len(_result), 4)
         tmp_dict['TPR'] = round(len(_result[(_result.y_pred >= min_) & (_result.y_true == 1)]) / total_bad, 4)
         tmp_dict['FPR'] = round(len(_result[(_result.y_pred >= min_) & (_result.y_true == 0)]) / total_good, 4)
 

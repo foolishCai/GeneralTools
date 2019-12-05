@@ -16,6 +16,8 @@ import operator
 from BaseUtils.pretty_util import *
 import math
 from BaseUtils.file_util import dump
+from interval import Interval
+import math
 
 ## 特征分析
 class FeatureExplore(object):
@@ -199,3 +201,92 @@ class SampleExplore(object):
         if file_path is not None:
             dump(iv_sum, file_path)
         return iv_sum
+
+
+
+## 考虑后续变量的PSI统计
+class PSIExplore(object):
+    def __init__(self, df, serial_cols, dist_cols, bins=5):
+        self.df = df
+        self.serial_cols = serial_cols
+        self.dist_cols = dist_cols
+        self.bins_num = int(100/bins)
+        self.log = log
+        self.IntervalDict = {}
+
+
+    def get_interval(self, x, null_value=None, has_null=True):
+
+        if has_null:
+            x = [i for i in x if not math.isnan(i)]
+        elif isinstance(null_value, list):
+            x = [i for i in x if x not in null_value]
+        elif null_value is not None:
+            x = [i for i in x if x != null_value]
+        else:
+            pass
+
+        pointList = []
+        for i in range(4):
+            pointList.append(np.percentile(x, self.bins_num * (i + 1)))
+        pointList = sorted(list(set(pointList)))
+        intervalList = []
+        for i in range(len(pointList) + 1):
+            if i == 0:
+                intervalList.append(Interval(float("-inf"), pointList[0], lower_closed=False, upper_closed=True))
+            elif i == len(pointList):
+                intervalList.append(Interval(pointList[-1], float("inf"), lower_closed=False, upper_closed=False))
+            else:
+                intervalList.append(Interval(pointList[i - 1], pointList[i], lower_closed=False, upper_closed=True))
+        for i in range(len(x)):
+            x[i] = np.argmax([x[i] in k for k in intervalList])
+        return x, intervalList
+
+
+    def main(self):
+
+        changeDF = self.df.copy()
+        for c in self.serial_cols:
+            self.log.info("Now is dealing the var={}".format(c))
+            x = changeDF[c].tolist()
+            x, self.IntervalDict[c] = self.get_interval(x)
+            changeDF.loc[~changeDF[c].isnull(), c] = x
+            changeDF[c] = changeDF[c].fillna(-1)
+
+        transDF = pd.DataFrame(columns=['feature', 'data', 'month'])
+        feature = self.serial_cols + self.dist_cols
+
+        for c in feature:
+            featureList = [c] * len(self.df)
+            dataList = changeDF[c].tolist()
+            monthList = changeDF['month'].tolist()
+            transDF = pd.concat([transDF, pd.DataFrame(data={'feature': featureList,
+                                                             'data': dataList,
+                                                             'month': monthList},
+                                                       columns=['feature', 'data', 'month'])])
+
+        monthList = sorted(list(set(changeDF['month'].tolist())))
+        psiDF = pd.DataFrame(columns=['feature', 'psi', 'month'])
+        for i in range(len(monthList)):
+            print("Now is dealing the month={}".format(monthList[i]))
+            if i <= 2:
+                basedf = transDF[transDF.month <= monthList[2]]
+                base_cnt = len(self.df[self.df['month'] <= monthList[2]])
+            else:
+                basedf = transDF[(transDF.month <= monthList[i]) & (transDF.month >= monthList[i - 2])]
+                base_cnt = len(self.df[(self.df['month'] <= monthList[i]) & (self.df['month'] >= monthList[i - 2])])
+            basedf = basedf.groupby([basedf.feature, basedf.data]).count()
+            testdf = transDF[transDF.month == monthList[i]]
+            testdf = testdf.groupby([testdf.feature, testdf.data]).count()
+            test_cnt = len(self.df[self.df.month == monthList[i]])
+            testdf.columns = ['testMonth']
+            union_df = pd.merge(basedf, testdf, how='left', left_index=True, right_index=True)
+            union_df = union_df.fillna(0)
+            union_df['psi'] = union_df.apply(lambda x: np.nan if x.month == 0 or x.testMonth == 0
+            else (x.testMonth / test_cnt - x.month / base_cnt) * np.log(x.testMonth / test_cnt - x.month / base_cnt),
+                                             axis=1)
+            union_df = union_df[['psi']].groupby(level=0).sum().reset_index()
+            union_df['month'] = monthList[i]
+            psiDF = pd.concat([psiDF, union_df])
+            psiDF = pd.pivot_table(psiDF, index=["feature"], values='psi', columns=['month'])
+            return psiDF

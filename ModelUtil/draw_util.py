@@ -80,14 +80,14 @@ def get_feature_importance(feature, importance, top=30, filename=None):
     return feature_importance_list[:top]
 
 
-def get_ks_lorenz(y, y_pred, title='Lorenz curve', file_path=None):
+def get_ks_lorenz(y_true, y_pred, title='Lorenz curve', file_path=None):
     rcParams['figure.figsize'] = 8, 8
     fig, ax = plt.subplots()
     ax.set_xlabel('Percentage', fontsize=15)
     ax.set_ylabel('tpr / fpr', fontsize=15)
     ax.set(xlim=(-0.01, 1.01), ylim=(-0.01, 1.01))
     ax.set_title(title, fontsize=20)
-    fpr, tpr, threshold = roc_curve(y, y_pred)
+    fpr, tpr, threshold = roc_curve(y_true, y_pred)
     percentage = np.round(np.array(range(1, len(fpr) + 1)) / len(fpr), 4)
     ks_delta = tpr - fpr
     ks_index = ks_delta.argmax()
