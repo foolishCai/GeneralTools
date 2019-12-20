@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Copyright 2016 bsfit.
-#
-
-# -----------------------------------------------------------------------------
-###µÚÒ»²½£º·ÖÏä
-
-####bin txt
-# bin
 
 import re
 from itertools import combinations
@@ -1490,32 +1481,3 @@ def scorecard2sql(iv_file):
             break
         if df1.iloc[i,1]!=df1.iloc[i+1,1]:
             print('end')
-
-#feature selection
-#df_woe=pd.read_csv('test_woe_wide_table.csv')
-#
-#var_all=df_woe.columns.tolist()
-#var_del=['loan_id','flag_ever_d30','call_night_3mt',
-# 'call_night_3mc',
-# 'money_flow_6m_min',
-# 'money_flow_rate',
-# 'money_flow_1m_avg',
-# 'money_flow_3m_min','distance']
-#
-#var_fin=list(set(var_all)-set(var_del))
-#
-#iv_info=pd.read_excel('info_wide_table.xlsx')
-#iv_info['var']=iv_info['var'].apply(lambda x:str(x))
-#iv_info_ss=iv_info[(iv_info['var']!='nan') & (iv_info['var']!='var')]
-#iv=iv_info_ss['IV'].groupby(iv_info_ss['var']).sum().reset_index()
-#ks=iv_info_ss['KS'].groupby(iv_info_ss['var']).max().reset_index()
-#iv_ks_info=pd.merge(iv,ks,on='var',how='inner')
-#iv_ks_info_sort=iv_ks_info.sort_values(by=['IV'],ascending=[False])
-#writer=pd.ExcelWriter('info_var_wide_table.xlsx')
-#iv_ks_info_sort.to_excel(writer,'bin_summary')
-#iv_info.to_excel(writer,'bin_detail')
-#writer.save()
-#
-#
-#select_var_part(df_woe, pd.DataFrame(), '.', 'wide_table_model.xlsx', 'flag_ever_d30', 'info_var_wide_table.xlsx', 10, True, 550, 20,
-#[], var_fin, None, cut_num=10, corr_limit=0.8)

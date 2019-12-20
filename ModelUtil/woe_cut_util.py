@@ -15,7 +15,7 @@ import pandas as pd
 from configs import log
 
 class GetWoeBin(object):
-    def __init__(self, X, y_true, is_changed=True, file_name=None, is_tag=False, special_value={}):
+    def __init__(self, X, y_true, is_changed=True, file_name=None, is_tag=False, special_value=None):
         if isinstance(y_true, pd.Series):
             self.y = y_true.tolist()
         if isinstance(y_true, pd.DataFrame):
@@ -26,7 +26,14 @@ class GetWoeBin(object):
         self.is_tag = is_tag
         self.log = log
         if isinstance(special_value, dict):
-            self.special_value = {k:[special_value] for k in X.columns}
+            self.special_value = {k: special_value[k] for k in X.columns}
+        elif isinstance(special_value, list):
+            self.special_value = {k: special_value for k in X.columns}
+        elif special_value is None:
+            pass
+        else:
+            self.special_value = {k: [special_value] for k in X.columns}
+
         self.global_bt = sum(self.y)
         self.global_gt = len(X) - self.global_bt
 
@@ -128,4 +135,3 @@ class GetWoeBin(object):
                                                                              "tag": tag_list,
                                                                              "woe": woe_list})])
             return woe_detail_df
-

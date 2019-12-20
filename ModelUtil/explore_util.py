@@ -14,7 +14,6 @@ import pandas as pd
 import numpy as np
 import operator
 from BaseUtils.pretty_util import *
-import math
 from BaseUtils.file_util import dump
 from interval import Interval
 import math
@@ -86,7 +85,7 @@ class FeatureExplore(object):
         # 对行的探索
         rows_null_percent = self.df.isnull().sum(axis=1) / self.df.shape[1]
         to_drop_rows = rows_null_percent[rows_null_percent > self.max_row_missing_rate]
-        to_drop_rows = dict(to_drop_rows)
+        to_drop_rows = to_drop_rows.to_dict()
         self.to_drop_rows = sorted(to_drop_rows.items(), key=operator.itemgetter(1), reverse=True)
 
         self.log.info("缺失值比例>{}的有{}个变量，缺失值比例>{}的总计有{}行".format(
@@ -141,16 +140,15 @@ class FeatureExplore(object):
 
 
 
-
-
 ## 样本分析，主要是考虑每个变量的woe，iv
 class SampleExplore(object):
     def __init__(self, df, target_name, fill_value):
+        self.log = log()
         self.df = df
         self.df.rename(columns={target_name: 'y'}, inplace=True)
         if isinstance(fill_value, list):
             self.fill_value = fill_value
-        else:
+        elif isinstance(fill_value, str):
             self.fill_value = [fill_value]
         self.bin_df = pd.DataFrame(columns=['feature', 'tag', 'LabelCnt_0', 'LabelCnt_1'])
 
@@ -159,10 +157,10 @@ class SampleExplore(object):
         for var in self.df.columns:
             if var == 'y':
                 continue
-            log.info("Now is dealing the var={}".format(var))
+            self.log.info("Now is dealing the var={}".format(var))
             self.df[var] = self.df[var].astype(str)
             tagList = self.df[var].unique().tolist()
-            log.info("The tagList is {}\n".format(tagList))
+            self.log.info("The tagList is {}\n".format(tagList))
             label0List = []
             label1List = []
             for tag in tagList:

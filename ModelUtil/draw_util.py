@@ -61,6 +61,17 @@ def get_correlation(df, figsize=(8, 6)):
     plt.show()
 
 
+def get_feature_correlation(df, x1_name, x2_name):
+    plt.figure(figsize=(8, 5))
+    new_data = df[(~df[x1_name].isnull()) & (df[x2_name].isnull())][[x1_name, x2_name]]
+    new_data[x1_name] = new_data[x1_name].astype('float')
+    new_data[x2_name] = new_data[x2_name].astype('float')
+    plt.scatter(new_data[x1_name], new_data[x2_name])
+    plt.xlabel(x1_name)
+    plt.ylabel(x2_name)
+    plt.show()
+
+
 def get_feature_importance(feature, importance, top=30, filename=None):
     if len(feature) < top:
         top = len(feature)
@@ -147,4 +158,37 @@ def get_pr_curve(y_true, y_pred, file_path=None):
     plt.show()
     if file_path is not None:
         plt.savefig(file_path)
+
+
+def get_feature_distribution(df, target_name, feature_name):
+    # 单特征分布
+    groupby_feature = df.groupby(feature_name).size()
+    for a, b in zip(range(len(groupby_feature.index.values.tolist())), groupby_feature.values.tolist()):
+        plt.text(a, b, '%.0f' % b, ha='center', va='bottom', fontsize=9)
+    groupby_feature.plot.bar(title='Distribution of {}'.format(feature_name), width=0.5, figsize=(6, 4))
+
+    # 单特征交互目标变量
+    groupby_with_target = df.groupby([feature_name, target_name])[feature_name].count().unstack(target_name).fillna(0)
+    groupby_with_target[df[target_name].unique().tolist()].plot.bar(
+        title='Distribution of {} by {}'.format(target_name, feature_name), stacked=True, figsize=(6, 4))
+    tmp = groupby_with_target.iloc[:, 1] / groupby_with_target.iloc[:, 0]
+    for a, b in zip(range(len(tmp.index.values.tolist())), tmp.values.tolist()):
+        plt.text(a, b, '%.2f' % b, ha='center', va='bottom', fontsize=9)
+
+
+def get_all_null(df):
+    data_tmp = df.copy()
+    data_tmp['n_null'] = data_tmp.isnull().sum(axis=1)
+    data_tmp = data_tmp.sort_values('n_null')
+    t = data_tmp.n_null.values
+    x = range(len(t))
+    plt.figure(figsize=(8, 5))
+    plt.scatter(x, t, c='b')
+    plt.xlim([0, data_tmp.shape[0]])
+    plt.xlabel('rank')
+    plt.ylabel('null nums')
+    plt.title('distribution of null nums')
+    plt.savefig('null_nums.png', dpi=500)
+    plt.show()
+    del data_tmp
 
