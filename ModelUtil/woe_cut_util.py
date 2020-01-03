@@ -11,6 +11,7 @@
 
 import woe.feature_process as fp
 import woe.eval as eval
+import woe.eval as eval
 import pandas as pd
 from configs import log
 
@@ -30,7 +31,7 @@ class GetWoeBin(object):
         elif isinstance(special_value, list):
             self.special_value = {k: special_value for k in X.columns}
         elif special_value is None:
-            pass
+            self.special_value = {k: [np.nan] for k in X.columns}
         else:
             self.special_value = {k: [special_value] for k in X.columns}
 
@@ -90,7 +91,7 @@ class GetWoeBin(object):
         else:
             changed_df = None
 
-        return self.civ_dict, woe_fp, changed_df, feature_detail
+        return woe_fp, changed_df, feature_detail
 
     def get_bins(self):
         feature = [k for k, v in self.civ_dict.items()]

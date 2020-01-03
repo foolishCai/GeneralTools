@@ -140,67 +140,6 @@ class FeatureExplore(object):
 
 
 
-## 样本分析，主要是考虑每个变量的woe，iv
-class SampleExplore(object):
-    def __init__(self, df, target_name, fill_value):
-        self.log = log()
-        self.df = df
-        self.df.rename(columns={target_name: 'y'}, inplace=True)
-        if isinstance(fill_value, list):
-            self.fill_value = fill_value
-        elif isinstance(fill_value, str):
-            self.fill_value = [fill_value]
-        self.bin_df = pd.DataFrame(columns=['feature', 'tag', 'LabelCnt_0', 'LabelCnt_1'])
-
-
-    def get_bin_result(self):
-        for var in self.df.columns:
-            if var == 'y':
-                continue
-            self.log.info("Now is dealing the var={}".format(var))
-            self.df[var] = self.df[var].astype(str)
-            tagList = self.df[var].unique().tolist()
-            self.log.info("The tagList is {}\n".format(tagList))
-            label0List = []
-            label1List = []
-            for tag in tagList:
-                label0List.append(len(self.df.query("y==0 and {}=='{}'".format(var, tag))))
-                label1List.append(len(self.df.query("y==1 and {}=='{}'".format(var, tag))))
-            tmp_df = pd.DataFrame(data={"feature": [var] * len(tagList),
-                                        "tag": tagList,
-                                        "gz_cnt": label0List,
-                                        "cus_cnt": label1List}, columns=['feature', 'tag', 'gz_cnt', 'cus_cnt'])
-            self.bin_df = pd.concat([self.bin_df, tmp_df])
-        self.bin_df = self.bin_df[(self.bin_df.LabelCnt_0 > 0) | (self.bin_df.LabelCnt_1 > 0)]
-
-    def get_woe_iv(self, file_path=None):
-        self.bin_df['LabelRatio_0'] = self.bin_df.gz_cnt.map(lambda x: round(x / sum(self.df.y == 0), 4))
-        self.bin_df['LabelRatio_1'] = self.bin_df.cus_cnt.map(lambda x: round(x / sum(self.df.y == 1), 4))
-
-        self.bin_df['delta_ratio'] = self.bin_df.apply(
-            lambda x: float("inf") if x["LabelCnt_0"] == 0 or x["LabelRatio_0"] == 0 else round(
-                (x["LabelRatio_1"] - x["LabelRatio_0"]) / x["LabelRatio_0"], 4), axis=1)
-
-        self.bin_df['woe'] = self.bin_df.apply(
-            lambda x: float("-inf") if x["LabelRatio_1"] == 0 else float("inf") if x["LabelRatio_0"] == 0 else round(
-                math.log(x["LabelRatio_1"] / x["LabelRatio_0"]), 4), axis=1)
-        self.bin_df["iv"] = self.bin_df.apply(lambda x: (x.LabelRatio_1 - x.LabelRatio_0) * x.woe, axis=1)
-        self.bin_df = pd.concat(
-            [self.bin_df[~self.bin_df.iv.isin(["inf", "-inf"])].sort_values(by='iv', ascending=False),
-             self.bin_df[self.bin_df.iv.isin(["inf", "-inf"])]])
-        if file_path is not None:
-            dump(self.bin_df, file_path)
-        return self.bin_df
-
-    def get_iv_sum(self, nan_filled=True, file_path=None):
-        if nan_filled:
-            self.bin_df = self.bin_df[~self.bin_df.tag.isin(self.fill_value)]
-        iv_sum = self.bin_df['iv'].groupby(by=[self.bin_df['feature']]).agg(['sum'])
-        if file_path is not None:
-            dump(iv_sum, file_path)
-        return iv_sum
-
-
 
 ## 考虑后续变量的PSI统计
 class PSIExplore(object):
