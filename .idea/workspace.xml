@@ -2,28 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/ModelUtil/iv_before_model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/bak_data_kw2tag.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_feature604_data2kw.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_feature605_data2kw.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_files/cus_df.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_files/full_config.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_files/gz_data_reault.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/config_files/import_miss.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/get_sql_file.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/get_sqldata_loop.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/AutoLabel/label_output.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/KdTree/makeTree.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/KdTree/tree_predict.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/udf/udf_get_applist.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/WorkProjects/udf/udf_usertags.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/explore_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/explore_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/feture_importance.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/feture_importance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/woe_cut_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/woe_cut_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/Readme.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,7 +110,7 @@
       <workItem from="1577957133271" duration="7741000" />
       <workItem from="1578018770929" duration="110000" />
       <workItem from="1578019090429" duration="4000" />
-      <workItem from="1578019114894" duration="533000" />
+      <workItem from="1578019114894" duration="1298000" />
     </task>
     <servers />
   </component>
