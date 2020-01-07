@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")" />
+    <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,6 +35,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/WorkProjects/configs" />
       <recent name="$PROJECT_DIR$/WorkUtils" />
     </key>
   </component>
@@ -107,7 +110,14 @@
       <workItem from="1577957133271" duration="7741000" />
       <workItem from="1578018770929" duration="110000" />
       <workItem from="1578019090429" duration="4000" />
-      <workItem from="1578019114894" duration="1525000" />
+      <workItem from="1578019114894" duration="3955000" />
+      <workItem from="1578272545695" duration="20000" />
+      <workItem from="1578281687439" duration="1356000" />
+      <workItem from="1578301107551" duration="511000" />
+      <workItem from="1578302588397" duration="142000" />
+      <workItem from="1578368361874" duration="10000" />
+      <workItem from="1578382370420" duration="288000" />
+      <workItem from="1578388364551" duration="690000" />
     </task>
     <servers />
   </component>

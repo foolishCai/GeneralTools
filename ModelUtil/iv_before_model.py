@@ -16,7 +16,7 @@ import numpy as np
 class GetIv(object):
     def __init__(self, df, target_name):
         self.log = log
-        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/github_FoolishCai/GeneralTools/configs/import_miss.csv", sep="|")
+        self.config_df = pd.read_csv("/WorkProjects/configs/import_miss.csv", sep="|")
         self.discrete_vars = self.config_df[self.config_df.if_continuous == 0].feature.unique()
         self.continuous_vars = self.config_df[self.config_df.if_continuous == 1].feature.unique()
 
