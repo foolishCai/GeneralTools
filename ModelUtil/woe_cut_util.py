@@ -11,9 +11,9 @@
 
 import woe.feature_process as fp
 import woe.eval as eval
-import woe.eval as eval
 import pandas as pd
 from configs import log
+import numpy as np
 
 class GetWoeBin(object):
     def __init__(self, X, y_true, is_changed=True, file_name=None, is_tag=False, special_value=None):

@@ -14,9 +14,10 @@ import pandas as pd
 import numpy as np
 import operator
 from BaseUtils.pretty_util import *
-from BaseUtils.file_util import dump
 from interval import Interval
 import math
+from ModelUtil.draw_util import get_correlation
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 ## 特征分析
 class FeatureExplore(object):
@@ -58,8 +59,6 @@ class FeatureExplore(object):
         self.explore_nulls()
         self.explore_single_value()
         self.explore_datetime_cols()
-        if len(list(self.df.columns[self.df.dtypes == 'object']))==0:
-            self.get_corr()
 
     def explore_objects(self):
         init_object_cols = list(self.df.columns[self.df.dtypes == 'object'])
@@ -119,7 +118,33 @@ class FeatureExplore(object):
         if len(datetime_cols) > 0:
             print("共有时间序列{}个，分别是{}\n)".format(len(datetime_cols), datetime_cols))
 
-    # 取得两个变量之间的相关性
+
+
+## 对特征共现姓进行处理
+class FeatureCorrExplore(object):
+    def __init__(self, df, target_name, is_delete = True, corr_threshold=None, vif_threshold=None):
+        self.log = log
+        self.df = df
+        self.is_delete = is_delete
+        self.y = self.df[target_name]
+        if corr_threshold is None:
+            self.corr_threshold = 0.7
+        else:
+            self.corr_threshold = corr_threshold
+        if vif_threshold is None:
+            self.vif_threshold = 10
+        else:
+            self.vif_threshold = vif_threshold
+        self.high_corr_df = pd.DataFrame(columns=["col1", "col2", "corr_value"])
+        self.check_df_std()
+
+    def check_df_std(self):
+        if self.df.columns[self.df.dtypes == 'object'].size > 0:
+            self.log.info("该Dataframe含有字符串类型，无法作相关性计算")
+        if self.df.isnull().any().max() == 1:
+            self.log.info("该Dataframe含有NULL值，无法计算VIF")
+
+    ## 取得两个变量之间的相关性
     def get_corr(self):
         # 检查变量两两间相关系数
         columns = self.df.columns.tolist()
@@ -129,14 +154,73 @@ class FeatureExplore(object):
         for i in range(len(columns) - 1):
             for j in range(i + 1, len(columns)):
                 corr2 = self.df[[columns[i], columns[j]]].corr().iloc[0, 1]
-                if abs(corr2) >= 0.7:
+                if abs(corr2) >= self.corr_threshold:
                     col1.append(columns[i])
                     col2.append(columns[j])
                     corr_value.append(corr2)
 
         # feat_weak_corr内任意两个特征相关性绝对值小于0.7
         self.high_corr_df = pd.DataFrame(data={"col1": col1, "col2": col2, "corr_value": corr_value})
+        self.log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> 相关系数 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print(format_dataframe(self.high_corr_df))
+        get_correlation(self.df, figsize=(20,20))
+
+    ## 删除较小的IV
+    def del_high_corr(self, cols_iv_dict):
+        deleted_var = []
+        high_corr_df = self.high_corr_df.copy()
+        high_corr_df['abs_corr_value'] = np.abs(high_corr_df.corr_value)
+        high_corr_df = high_corr_df.sort_values(by='abs_corr_value', ascending=False)
+
+        for index, row in high_corr_df.iterrows():
+            if row['col1'] == 'y' or row['col2'] == 'y':
+                continue
+            elif row['col1'] in deleted_var or row['col2'] in deleted_var:
+                continue
+            elif cols_iv_dict[row['col1']] > cols_iv_dict[row['col2']]:
+                deleted_var.append(row['col2'])
+            else:
+                deleted_var.append(row['col1'])
+
+        if self.is_delete:
+            self.df = self.df.drop(deleted_var, axis=1)
+        else:
+            df1 = self.df.drop(deleted_var, axis=1)
+            return df1
+
+    ## 计算各个VIF
+    def get_vif(self):
+        num_cols = list(range(self.df.shape[1]))
+        self.vif_df = pd.DataFrame()
+        self.vif_df['vif_value'] = [variance_inflation_factor(self.df.iloc[:, num_cols].values, ix) for ix in range(len(num_cols))]
+        self.vif_df['feature'] = self.df.columns
+        self.vif_df = self.vif_df.sort_values(by='vif_value', ascending=False)
+        print("max(VIF) = {}".format(max(self.vif_df.vif_value)))
+
+    ## 根据VIF删除特征
+    def del_vif_col(self):
+        if max(self.vif_df.vif_value) < self.vif_threshold:
+            self.log.info("没有多重共线性问题!")
+        else:
+            vifList = self.vif_df.vif_value.tolist()
+            maxVifValue = max(vifList)
+            X = self.df.copy()
+            col = list(range(X.shape[1]))
+
+            while maxVifValue > self.vif_threshold:
+                self.log.info('delete var=', X.columns[col[np.argmax(vifList)]], '  ', 'vif=', maxVifValue)
+                X = X.drop([X.columns[col[np.argmax(vifList)]]], axis=1)
+                col = list(range(X.shape[1]))
+                vifList = [variance_inflation_factor(X.iloc[:, col].values, ix) for ix in
+                           range(X.iloc[:, col].shape[1])]
+                maxVifValue = np.max(vifList)
+
+            if self.is_delete:
+                self.df = X.copy()
+            else:
+                df1 = self.df[X.columns]
+                return df1
+
 
 
 

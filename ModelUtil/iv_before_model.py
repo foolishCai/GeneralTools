@@ -9,14 +9,14 @@ import pandas as pd
 from configs import log
 import woe.feature_process as fp
 import math
-import numpy as np
+
 
 
 
 class GetIv(object):
     def __init__(self, df, target_name):
         self.log = log
-        self.config_df = pd.read_csv("/WorkProjects/configs/import_miss.csv", sep="|")
+        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/WorkProjects/configs/import_miss.csv", sep="|")
         self.discrete_vars = self.config_df[self.config_df.if_continuous == 0].feature.unique()
         self.continuous_vars = self.config_df[self.config_df.if_continuous == 1].feature.unique()
 
@@ -25,7 +25,7 @@ class GetIv(object):
 
     def get_woe(self):
         data = self.df.copy()  # 用于存储所有数据的woe值
-        civ_list = []
+        self.civ_list = []
         n_positive = sum(self.df['target'])
         n_negtive = len(self.df) - n_positive
 
@@ -41,8 +41,8 @@ class GetIv(object):
                     elif col in self.discrete_vars:
                         civ = fp.proc_woe_discrete(data[~data[col].isnull()], col, n_positive, n_negtive, 0.05 * len(data),
                                                alpha=0.05)
-                    civ_list.append(civ)
-                    self.df.loc[(self.df[col].isnull()), col] = fp.woe_trans(data[~data[col].isnull()][col], civ)
+                    self.civ_list.append(civ)
+                    self.df.loc[~(self.df[col].isnull()), col] = fp.woe_trans(data[~data[col].isnull()][col], civ)
                 except:
                     self.log.info("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>{} cannot be caculated!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n".format(col))
 
@@ -77,6 +77,8 @@ class GetIv(object):
             lambda x: float("-inf") if x["LabelRatio_1"] == 0 else float("inf") if x["LabelRatio_0"] == 0 else round(
                 math.log(x["LabelRatio_1"] / x["LabelRatio_0"]), 4), axis=1)
         self.bin_df["iv"] = self.bin_df.apply(lambda x: (x.LabelRatio_1 - x.LabelRatio_0) * x.woe, axis=1)
+        trand_df = self.config_df[['feature', 'chinese_name']].drop_duplicates()
+        self.bin_df = pd.merge(self.bin_df, trand_df, how='left', on='feature')
         self.bin_df = pd.concat(
             [self.bin_df[~self.bin_df.iv.isin(["inf", "-inf"])].sort_values(by='iv', ascending=False),
              self.bin_df[self.bin_df.iv.isin(["inf", "-inf"])]])

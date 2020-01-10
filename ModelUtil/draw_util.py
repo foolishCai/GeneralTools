@@ -92,7 +92,7 @@ def get_feature_importance(feature, importance, top=30, filename=None):
 
 
 def get_ks_lorenz(y_true, y_pred, title='Lorenz curve', file_path=None):
-    rcParams['figure.figsize'] = 8, 8
+    rcParams['figure.figsize'] = 8, 6
     fig, ax = plt.subplots()
     ax.set_xlabel('Percentage', fontsize=15)
     ax.set_ylabel('tpr / fpr', fontsize=15)
@@ -154,7 +154,7 @@ def get_pr_curve(y_true, y_pred, file_path=None):
     plt.title('Precision/Recall Curve')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.plot(recall,precision)
+    plt.plot(recall, precision)
     plt.show()
     if file_path is not None:
         plt.savefig(file_path)
@@ -191,4 +191,3 @@ def get_all_null(df):
     plt.savefig('null_nums.png', dpi=500)
     plt.show()
     del data_tmp
-

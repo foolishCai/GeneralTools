@@ -529,7 +529,7 @@ def get_woe_df(df,label,output_path,output_file,dist_col,serial_col,del_col,df_t
          
     return df,df_test
 
-def concat_file(output_path,output_file,dist_col):
+def concat_file(output_path,output_file,dist_col,serial_col):
     #合并
     writer1=pd.ExcelWriter(output_path+'/'+output_file+'3.xlsx')
     if len(dist_col)>0:
