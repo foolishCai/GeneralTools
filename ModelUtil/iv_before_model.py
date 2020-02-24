@@ -16,7 +16,7 @@ import math
 class GetIv(object):
     def __init__(self, df, target_name):
         self.log = log
-        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/WorkProjects/configs/import_miss.csv", sep="|")
+        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/gitlab_yzx/just-for-cai/configs/import_miss.csv", sep="|")
         self.discrete_vars = self.config_df[self.config_df.if_continuous == 0].feature.unique()
         self.continuous_vars = self.config_df[self.config_df.if_continuous == 1].feature.unique()
 

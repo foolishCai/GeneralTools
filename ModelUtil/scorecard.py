@@ -2,8 +2,9 @@
 
 import re
 from itertools import combinations
-import pandas as pd
+# import pandas as pd
 import numpy as np
+import modin.pandas as pd
 from math import isnan
 import multiprocessing as ps
 from pandas import pivot_table
@@ -438,41 +439,28 @@ def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame
         return data_woe_train
 
 
-
-#binning
-#import pandas as pd
-#df=pd.read_csv('/home/bangsun/RoyGao/widetable.csv')
-#df=df.fillna(-99998)
-#df_woe('.','info_wide_table','flag_ever_d30', pd.DataFrame(),df,not_var_list=['id_card','id_name','id_phone'],
-#        not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=[],flag_var_list=['loan_id'])
-
-##########20190621
-def dist_col_stat(df,key_,label,output_filename,dist_list,value_count=20,del_col=[],test_df=pd.DataFrame()):
-    #print(label)
-    bad_count=df[label].sum()
-    df_len=df.shape[0]
-    #if dist_col!=['']:
-    #    dist_list.extend(dist_col)
-    #dist_list.remove(key_)
-    del_list=[]
+def dist_col_stat(df, key_, label, output_filename, dist_list, value_count=20, del_col=[], test_df=pd.DataFrame()):
+    bad_count = df[label].sum()
+    df_len = df.shape[0]
+    del_list = []
     writer = pd.ExcelWriter("{}_dist.xlsx".format(output_filename),)
-    j=0
+    j = 0
     for i in dist_list:
         locals()[i+'_1'] = df[[i,label,key_]]
         locals()[i+'_2'] = locals()[i+'_1'][label].groupby(locals()[i+'_1'][i]).sum().rename('bad').reset_index()
-        locals()[i+'_3']=  locals()[i+'_1'][key_].groupby(locals()[i+'_1'][i]).count().rename(i+'_count').reset_index()
-        locals()[i+'_4'] = pd.merge(locals()[i+'_3'],locals()[i+'_2'],on=i,how='left')
+        locals()[i+'_3'] = locals()[i+'_1'][key_].groupby(locals()[i+'_1'][i]).count().rename(i+'_count').reset_index()
+        locals()[i+'_4'] = pd.merge(locals()[i+'_3'], locals()[i+'_2'], on=i, how='left')
         locals()[i+'_4']['bad_rate'] = locals()[i+'_4']['bad']/locals()[i+'_4'][i+'_count']
         locals()[i+'_4']['good_percent'] = (locals()[i+'_4'][i+'_count']-locals()[i+'_4']['bad'])/(df_len-bad_count)
         locals()[i+'_4']['bad_percent'] = locals()[i+'_4']['bad']/bad_count
         locals()[i+'_4']['WOE'] = np.log(locals()[i+'_4']['good_percent'] / locals()[i+'_4']['bad_percent'])
-        locals()[i+'_4']['rank_'+i]=locals()[i+'_4'].bad_rate.rank(axis=0,method='first')
-        locals()[i+'_4']['KS']=0
-        locals()[i+'_4']['var']=i
-        locals()[i+'_4']['good']=locals()[i+'_4'][i+'_count']-locals()[i+'_4']['bad']
+        locals()[i+'_4']['rank_'+i]=locals()[i+'_4'].bad_rate.rank(axis=0, method='first')
+        locals()[i+'_4']['KS'] = 0
+        locals()[i+'_4']['var'] = i
+        locals()[i+'_4']['good'] = locals()[i+'_4'][i+'_count']-locals()[i+'_4']['bad']
         locals()[i] = locals()[i+'_4'][[i,'rank_'+i]]
-        if locals()[i+'_4'].shape[0]>value_count:#删除离散属性值过多的特征
-            df[i]=df.merge(locals()[i],how='left',on=i)['rank_'+i]
+        if locals()[i+'_4'].shape[0] > value_count: #删除离散属性值过多的特征
+            df[i]=df.merge(locals()[i], how='left', on=i)['rank_'+i]
             del_list.append(i)
             try:
                 test_df[i]=test_df.merge(locals()[i],how='left',on=i)['rank_'+i]
@@ -480,46 +468,37 @@ def dist_col_stat(df,key_,label,output_filename,dist_list,value_count=20,del_col
                 pass
         else:
             locals()[i+'_4']['IV']=(locals()[i+'_4']['good_percent']-locals()[i+'_4']['bad_percent'])*locals()[i+'_4']['WOE']
-            df[i]=df.merge(locals()[i+'_4'],how='left',on=i)['WOE']
+            df[i] = df.merge(locals()[i+'_4'], how='left', on=i)['WOE']
             try:
-                test_df[i]=test_df.merge(locals()[i+'_4'],how='left',on=i)['WOE']
+                test_df[i] = test_df.merge(locals()[i+'_4'], how='left', on=i)['WOE']
             except:
                 pass
-            locals()[i+'_4'].sort_values('rank_'+i).drop(['rank_'+i,'good_percent','bad_percent'],axis=1).rename(columns={i:'Bin',i+'_count':'total_count'}).to_excel(writer, 'dist_bin', startrow=j)
-            j+=locals()[i+'_4'].shape[0]+2
+            locals()[i+'_4'].sort_values('rank_'+i).drop(['rank_'+i, 'good_percent', 'bad_percent'], axis=1).rename(columns ={i: 'Bin', i+'_count': 'total_count'}).to_excel(writer, 'dist_bin', startrow=j)
+            j += locals()[i+'_4'].shape[0]+2
     
     writer.save()        
     writer.close()
     print(del_list)
     print('Those features have too many types!!!')
-    return df,test_df
+    return df, test_df
 
 
-def get_woe_df(df,label,output_path,output_file,dist_col,serial_col,del_col,df_test=pd.DataFrame()):
+def get_woe_df(df, label, output_path, output_file, dist_col, serial_col, del_col, df_test=pd.DataFrame()):
     
     #填充
-    df=df[del_col+dist_col+serial_col]
-    if df_test.shape[0]!=0:
-        df_test=df_test[del_col+dist_col+serial_col]
-        df_test=df_test.reset_index() 
-    df.fillna(-99998,inplace=True)
-    df_test.fillna(-99998,inplace=True)
-          
-    #f_v=pd.DataFrame([f_col,[ df[k].value_counts().shape[0] for k in dist_col]]).T
-     
-    df=df.reset_index()  
-    #print(1,df_test.shape)
-    if len(dist_col)>0:  
-        df,df_test=dist_col_stat(df,'index',label,output_path+'/'+output_file,dist_col,value_count=20,del_col=del_col,test_df=df_test)
-    #print(2,df_test.shape)
-    #dist_list=list(set(dist_list)-set(del_list))
-    #df=df.loc[0:7000,:]
-    #dist_list=list(df.columns[df.dtypes=='object'])
-    
-    #xiaohua
-    #df2=df[['label']+f_v[f_v[1]>10][0].tolist()] 
-    #print(len(serial_col))        
-    if len(serial_col)>0:
+    df = df[del_col+dist_col+serial_col]
+    if df_test.shape[0] != 0:
+        df_test = df_test[del_col+dist_col+serial_col]
+        df_test = df_test.reset_index()
+    df.fillna(-99998, inplace=True)
+    df_test.fillna(-99998, inplace=True)
+
+    df = df.reset_index()
+
+    if len(dist_col) > 0:
+        df, df_test = dist_col_stat(df, 'index', label, output_path+'/'+output_file, dist_col, value_count=20, del_col=del_col, test_df=df_test)
+
+    if len(serial_col) > 0:
         print('Cutting bins...')
         if df_test.shape[0]==0:
             df=df_woe1(output_path,output_file,label,df_test,df,not_var_list=del_col+dist_col+['index'],not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=serial_col,flag_var_list=[])        
