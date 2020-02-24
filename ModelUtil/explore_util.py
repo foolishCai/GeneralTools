@@ -18,10 +18,11 @@ from interval import Interval
 import math
 from ModelUtil.draw_util import get_correlation
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from ModelUtil.draw_util import get_null_pct_by_label
 
 ## 特征分析
 class FeatureExplore(object):
-    def __init__(self, df, max_col_missing_rate=None, max_row_missing_rate=None, change_type=True):
+    def __init__(self, df, max_col_missing_rate=None, max_row_missing_rate=None, max_null_pct_by_sort=None, change_type=True):
         self.log = log
         self.df = df
         if max_col_missing_rate is not None:
@@ -32,6 +33,10 @@ class FeatureExplore(object):
             self.max_row_missing_rate = max_row_missing_rate
         else:
             self.max_row_missing_rate = 0.3
+        if max_null_pct_by_sort is not None:
+            self.max_null_pct_by_sort = max_null_pct_by_sort
+        else:
+            self.max_null_pct_by_sort = 0.3
         self.change_type = change_type
         self.real_objects_col = []          # 处理以后不能进行数值型转化的
         self.unreal_onjects_col = []
@@ -74,7 +79,23 @@ class FeatureExplore(object):
             print("这些离散变量可以处理:{}".format(self.unreal_onjects_col))
         print("处理以后剩下的离散变量共{}个，分别是：{}\n".format(len(self.real_objects_col), self.real_objects_col))
 
-    def explore_nulls(self):
+    def explore_nulls(self, is_show=False):
+        # 对不同类别的y值进行缺失值进行分析
+        data = self.df.copy()
+        null_pct_by_by_label = data.drop('y', axis=1).groupby(data['y']).apply(lambda x: (x.isna().sum()) / (x.shape[0])).T.drop_duplicates(0.0).sort_values(0.0)
+        null_pct_by_by_label.columns = ['label_0', 'label_1']
+        if is_show:
+            get_null_pct_by_label(null_pct_by_by_label)
+
+        null_pct_by_by_label['delta'] = null_pct_by_by_label.apply(lambda x: np.abs(x['label_0'] - x['label_1']),
+                                                                   axis=1)
+        null_pct_by_by_label = null_pct_by_by_label[null_pct_by_by_label.delta > self.max_null_pct_by_sort]
+        self.log.info("对比值超过{}有{}个特征".format(self.max_null_pct_by_sort, len(null_pct_by_by_label.index)))
+        self.log.info("分别为{}".format(null_pct_by_by_label.index))
+        null_pct_by_by_label.sort_values(by=['delta'], ascending=False)
+        print("不同label下的缺失值情况如下\n:{}".format(format_dataframe(null_pct_by_by_label)))
+
+
         # 对列的探索
         cols_null_percent = self.df.isnull().sum() / self.df.shape[0]
         to_drop_cols = cols_null_percent[cols_null_percent > self.max_col_missing_rate]
@@ -122,7 +143,7 @@ class FeatureExplore(object):
 
 ## 对特征共现姓进行处理
 class FeatureCorrExplore(object):
-    def __init__(self, df, target_name, is_delete = True, corr_threshold=None, vif_threshold=None):
+    def __init__(self, df, target_name, is_delete=True, corr_threshold=None, vif_threshold=None):
         self.log = log
         self.df = df
         self.is_delete = is_delete
@@ -143,6 +164,15 @@ class FeatureCorrExplore(object):
             self.log.info("该Dataframe含有字符串类型，无法作相关性计算")
         if self.df.isnull().any().max() == 1:
             self.log.info("该Dataframe含有NULL值，无法计算VIF")
+
+    def get_qutitle00_qutitle99(self):
+        q0equalq99_col = set()
+        for col in self.df.columns:
+            quantile00, quantile99 = self.df[col].quantile([.0, .99])
+            if quantile00 == quantile99:
+                self.log.info("特征{}, quantitle0={}, quantitle99={}".format(col, quantile00, quantile99))
+                q0equalq99_col.add(col)
+        return q0equalq99_col
 
     ## 取得两个变量之间的相关性
     def get_corr(self):

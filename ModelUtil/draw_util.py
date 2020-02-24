@@ -191,3 +191,18 @@ def get_all_null(df):
     plt.savefig('null_nums.png', dpi=500)
     plt.show()
     del data_tmp
+
+
+def get_null_pct_by_label(df):
+    plt.figure(figsize=(20, 7))
+    plt.plot(df['label_0'], 'r', label='y=0')
+    plt.plot(df['label_0'], 'g', label='y=1')
+    plt.legend()
+    plt.xticks(rotation=90)
+    plt.show()
+
+
+def get_iv_plt(iv_map_dict):
+    plt.figure(figsize=(20, 7))
+    plt.hist([i for i in iv_map_dict.values() if i < 5], bins=200)
+    plt.show()

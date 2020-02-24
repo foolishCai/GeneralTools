@@ -9,6 +9,8 @@ import pandas as pd
 from configs import log
 import woe.feature_process as fp
 import math
+import toad
+from ModelUtil.draw_util import get_iv_plt
 
 
 
@@ -82,3 +84,23 @@ class GetIv(object):
         self.bin_df = pd.concat(
             [self.bin_df[~self.bin_df.iv.isin(["inf", "-inf"])].sort_values(by='iv', ascending=False),
              self.bin_df[self.bin_df.iv.isin(["inf", "-inf"])]])
+
+
+
+class GetIvMap(object):
+    def __init__(self, df, target_name, max_iv_ratio=None):
+        self.log = log
+        df.rename(columns={target_name: 'target'}, inplace=True)
+        self.df = df
+        if max_iv_ratio is None:
+            self.max_iv_ratio = 0.2
+        else:
+            self.max_iv_ratio = max_iv_ratio
+
+    def get_iv_map(self, is_show=False):
+        iv_map = {col: toad.IV(self.df[col], self.df['target']) for col in self.df.columns if col!='target'}
+        iv_map = dict(sorted(iv_map.items(), key=lambda kv: kv[1], reverse=True))
+        iv_map = {k: v for k, v in iv_map.items() if v > self.max_iv_ratio}
+        self.log.info("超过阈值={}的特征有{}个".format(self.max_iv_ratio, len(iv_map)))
+        if is_show:
+            get_iv_plt(iv_map)
