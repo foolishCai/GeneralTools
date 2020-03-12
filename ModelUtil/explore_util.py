@@ -19,6 +19,7 @@ import math
 from ModelUtil.draw_util import get_correlation
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from ModelUtil.draw_util import get_null_pct_by_label
+from scipy.stats import ks_2samp
 
 ## 特征分析
 class FeatureExplore(object):
@@ -341,3 +342,9 @@ class PSIExplore(object):
             psiDF = pd.concat([psiDF, union_df])
             psiDF = pd.pivot_table(psiDF, index=["feature"], values='psi', columns=['month'])
             return psiDF
+
+
+## 观察连续变量的KS检验
+def get_ks2sampe_result(l1, l2):
+    s, p = ks_2samp(l1, l2)
+    return s,p

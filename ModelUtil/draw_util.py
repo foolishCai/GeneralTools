@@ -206,3 +206,70 @@ def get_iv_plt(iv_map_dict):
     plt.figure(figsize=(20, 7))
     plt.hist([i for i in iv_map_dict.values() if i < 5], bins=200)
     plt.show()
+
+
+def get_report_picture(train_true, train_pred, test_true, test_pred):
+    fig = plt.figure(figsize=(12, 12))
+    fpr, tpr, threshold = roc_curve(train_true, train_pred)
+    roc_auc = auc(fpr, tpr)
+
+    # train-ks
+    ax1 = fig.add_subplot(2, 2, 1)
+    ax1.set_xlabel('Percentage', fontsize=15)
+    ax1.set_ylabel('tpr / fpr', fontsize=15)
+    ax1.set(xlim=(-0.01, 1.01), ylim=(-0.01, 1.01))
+    ax1.set_title("Train-ks", fontsize=20)
+    percentage = np.round(np.array(range(1, len(fpr) + 1)) / len(fpr), 4)
+    ks_delta = tpr - fpr
+    ks_index = ks_delta.argmax()
+    ax1.plot([percentage[ks_index], percentage[ks_index]],
+             [tpr[ks_index], fpr[ks_index]],
+             color='limegreen', lw=2, linestyle='--')
+    ax1.text(percentage[ks_index] + 0.02, (tpr[ks_index] + fpr[ks_index]) / 2,
+             'ks: {0:.4f}'.format(ks_delta[ks_index]),
+             fontsize=13)
+    ax1.plot(percentage, tpr, color='dodgerblue', lw=2, label='tpr')
+    ax1.plot([0, 1], [0, 1], color='darkgrey', linestyle='--')
+    ax1.plot(percentage, fpr, color='tomato', lw=2, label='fpr')
+    ax1.legend(fontsize='x-large')
+
+    # train-auc
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax2.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.4f)' % roc_auc)  ###假正率为横坐标，真正率为纵坐标做曲线
+    ax2.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    ax2.set_xlabel('False Positive Rate')
+    ax2.set_ylabel('True Positive Rate')
+    ax2.set_title('Train ROC curve')
+    ax2.legend(loc="lower right")
+
+    fpr, tpr, threshold = roc_curve(test_true, test_pred)
+    roc_auc = auc(fpr, tpr)
+
+    # train-ks
+    ax3 = fig.add_subplot(2, 2, 3)
+    ax3.set_xlabel('Percentage', fontsize=15)
+    ax3.set_ylabel('tpr / fpr', fontsize=15)
+    ax3.set(xlim=(-0.01, 1.01), ylim=(-0.01, 1.01))
+    ax3.set_title("Test-ks", fontsize=20)
+    percentage = np.round(np.array(range(1, len(fpr) + 1)) / len(fpr), 4)
+    ks_delta = tpr - fpr
+    ks_index = ks_delta.argmax()
+    ax3.plot([percentage[ks_index], percentage[ks_index]],
+             [tpr[ks_index], fpr[ks_index]],
+             color='limegreen', lw=2, linestyle='--')
+    ax3.text(percentage[ks_index] + 0.02, (tpr[ks_index] + fpr[ks_index]) / 2,
+             'ks: {0:.4f}'.format(ks_delta[ks_index]),
+             fontsize=13)
+    ax3.plot(percentage, tpr, color='dodgerblue', lw=2, label='tpr')
+    ax3.plot([0, 1], [0, 1], color='darkgrey', linestyle='--')
+    ax3.plot(percentage, fpr, color='tomato', lw=2, label='fpr')
+    ax3.legend(fontsize='x-large')
+
+    # train-auc
+    ax4 = fig.add_subplot(2, 2, 4)
+    ax4.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.4f)' % roc_auc)  ###假正率为横坐标，真正率为纵坐标做曲线
+    ax4.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    ax4.set_xlabel('False Positive Rate')
+    ax4.set_ylabel('True Positive Rate')
+    ax4.set_title('Test ROC curve')
+    ax4.legend(loc="lower right")

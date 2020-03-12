@@ -146,7 +146,9 @@ def get_corr(df, iv_dict):
     feat_weak_corr = [i for i in columns if i not in id_del]
     return feat_weak_corr
 
+
+# 计算多重共线性
 def get_vif_value(df):
     col = list(range(df.shape[1]))
     vif = [variance_inflation_factor(df.iloc[:, col].values, ix) for ix in range(len(col))]
-    print(max(vif))
+    return max(vif)

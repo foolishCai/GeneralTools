@@ -18,7 +18,7 @@ from ModelUtil.draw_util import get_iv_plt
 class GetIv(object):
     def __init__(self, df, target_name):
         self.log = log
-        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/gitlab_yzx/just-for-cai/configs/import_miss.csv", sep="|")
+        self.config_df = pd.read_csv("/Users/cai/Desktop/pythonProjects/gitlab_yzx/just-for-cai/feature_configs/import_miss_763.txt", sep=",")
         self.discrete_vars = self.config_df[self.config_df.if_continuous == 0].feature.unique()
         self.continuous_vars = self.config_df[self.config_df.if_continuous == 1].feature.unique()
 
@@ -49,7 +49,9 @@ class GetIv(object):
                     self.log.info("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>{} cannot be caculated!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n".format(col))
 
     def get_data2tag(self):
-        data = self.df[self.discrete_vars.tolist() + self.continuous_vars.tolist() + ['target']]
+        cols = self.discrete_vars.tolist() + self.continuous_vars.tolist() + ['target']
+        cols = [i for i in cols if i in self.df.columns]
+        data = self.df[cols]
         data = data.fillna('blank')
         self.bin_df = pd.DataFrame(columns=['feature', 'tag', 'LabelCnt_0', 'LabelCnt_1'])
         for var in data.columns:
