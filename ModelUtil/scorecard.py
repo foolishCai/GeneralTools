@@ -2,9 +2,9 @@
 
 import re
 from itertools import combinations
-# import pandas as pd
+import pandas as pd
 import numpy as np
-import modin.pandas as pd
+# import modin.pandas as pd
 from math import isnan
 import multiprocessing as ps
 from pandas import pivot_table
@@ -368,7 +368,7 @@ def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame
     :param Bin_rate: min rate of smaple in each Bin
     :return:
     """
-    #检验数据
+    # 检验数据
     output_filename = filepath + "/" + output_file
     writer = pd.ExcelWriter("{}.xlsx".format(output_filename))
     flag_var_list.append(flag_name)
@@ -394,13 +394,13 @@ def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame
         print('No variable available for analysis')
         return pd.DataFrame()
 
-    #循环分箱
+    # 循环分箱
     iter = 0
     i = 0
     for var in target_var_list:
-            #print(0)
+        # print(0)
         var_stat = Best_KS_Bin(flag_name, var, data_train,rate=Bin_rate,piece=Bin_max_piece) #bestKS分箱
-        #print(1)
+        # print(1)
         var_stat['var'] = var
         var_stat.to_excel(writer, 'bin', startrow=i)
         len_df = var_stat.shape[0] + 1
@@ -446,7 +446,7 @@ def dist_col_stat(df, key_, label, output_filename, dist_list, value_count=20, d
     writer = pd.ExcelWriter("{}_dist.xlsx".format(output_filename),)
     j = 0
     for i in dist_list:
-        locals()[i+'_1'] = df[[i,label,key_]]
+        locals()[i+'_1'] = df[[i, label, key_]]
         locals()[i+'_2'] = locals()[i+'_1'][label].groupby(locals()[i+'_1'][i]).sum().rename('bad').reset_index()
         locals()[i+'_3'] = locals()[i+'_1'][key_].groupby(locals()[i+'_1'][i]).count().rename(i+'_count').reset_index()
         locals()[i+'_4'] = pd.merge(locals()[i+'_3'], locals()[i+'_2'], on=i, how='left')

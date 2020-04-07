@@ -8,12 +8,15 @@
 @desc:
 '''
 
+import sys
+sys.path.append("/Users/cai/Desktop/pythonProjects/github_FoolishCai/GeneralTools")
+
 from configs import log
 from collections import Counter
 import pandas as pd
 import numpy as np
 import operator
-from BaseUtils.pretty_util import *
+from CommonUtils.pretty_util import *
 from interval import Interval
 import math
 from ModelUtil.draw_util import get_correlation
@@ -251,6 +254,7 @@ class FeatureCorrExplore(object):
             else:
                 df1 = self.df[X.columns]
                 return df1
+
 
 
 
