@@ -25,7 +25,8 @@ import sys
 class get_distance(object):
 
     def __init__(self, file_path):
-        self.file_path = "/Users/cai/Desktop/address_test.xlsx"
+        # self.file_path = "/Users/cai/Desktop/address_test.xlsx"
+        self.file_path = file_path
         df = pd.read_excel(self.file_path)
         df.columns = ["id", "addr1", "addr2"]
         blank_cols = [i for i in list(df) if df[i].astype(str).str.findall(r'^\s*$').apply(lambda x:0 if len(x)==0 else 1).sum()>0]

@@ -506,7 +506,7 @@ def get_woe_df(df, label, output_path, output_file, dist_col, serial_col, del_co
             df,df_test=df_woe1(output_path,output_file,label,df_test,df,not_var_list=del_col+dist_col,not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=serial_col,flag_var_list=[])
         print(df.shape) 
          
-    return df,df_test
+    return df, df_test
 
 def concat_file(output_path,output_file,dist_col,serial_col):
     #合并
@@ -759,7 +759,7 @@ def delete_inconsistent_coefficient(df_train, var_list, flag_name):
     var_p = pd.DataFrame(var_p)
     var_p = var_p.reset_index()
     var_p.columns = ['var', 'p']
-    var_coef2 = var_coef.ix[var_coef['coef'] > 0]
+    var_coef2 = var_coef.loc[var_coef['coef'] > 0]
     var_count = len(var_coef2['var'])
     if var_count != 0:
         not_var_p = list(var_coef2['var'])
@@ -819,7 +819,7 @@ def variance_inflation_factor(exog, exog_idx):
 
 
 def get_vif(df_train, var_list, dic_iv_rank):
-    x_train = df_train[var_list].as_matrix()
+    x_train = df_train[var_list].iloc[:, :].values
     dic_new = {}
     for i in range(len(var_list)):
         vif_value = variance_inflation_factor(x_train, i)
@@ -844,7 +844,7 @@ def cal_vif_value(var_list, df_train, vif_threshold, dic_iv_rank):
     """
     delete_list = []
     vif_iv_sort = get_vif(df_train, var_list, dic_iv_rank)
-    vif_max = vif_iv_sort.ix[0, 'vif']
+    vif_max = vif_iv_sort.loc[0, 'vif']
     vif_need_var = vif_iv_sort['var'].tolist()
     while vif_max >= vif_threshold:
         select_var_all = vif_iv_sort[vif_iv_sort['vif'] >= vif_threshold]
@@ -859,7 +859,7 @@ def cal_vif_value(var_list, df_train, vif_threshold, dic_iv_rank):
             # return vif_need_var
             vif_iv_sort = get_vif(df_train, vif_need_var, dic_iv_rank)
             # print  vif_iv_sort
-            vif_max = vif_iv_sort.ix[0, 'vif']
+            vif_max = vif_iv_sort.loc[0, 'vif']
     return vif_need_var
 
 
@@ -927,10 +927,10 @@ def cal_score(yp_train, flag, base_score, double_score, odds):
     for i in range(len(p)):
         p_.append(1 - p[i])
     df_rs = rs.copy()
-    df_rs.ix[:, 'p_'] = p_
-    df_rs.ix[:, 'log_odds'] = np.log(df_rs.ix[:, 'p'] / df_rs.ix[:, 'p_'])
-    df_rs.ix[:, 'score'] = np.array([A for _ in range(len(df_rs))]) - np.array([B for _ in range(len(df_rs))]) * np.log(
-        df_rs.ix[:, 'p'] / df_rs.ix[:, 'p_'])
+    df_rs.loc[:, 'p_'] = p_
+    df_rs.loc[:, 'log_odds'] = np.log(df_rs.loc[:, 'p'] / df_rs.loc[:, 'p_'])
+    df_rs.loc[:, 'score'] = np.array([A for _ in range(len(df_rs))]) - np.array([B for _ in range(len(df_rs))]) * np.log(
+        df_rs.loc[:, 'p'] / df_rs.loc[:, 'p_'])
     df_rs['score'] = df_rs['score'].apply(lambda x: int(x))
     return df_rs, A, B
 
@@ -981,17 +981,17 @@ def get_AR_KS(res):
     cum_bad_rate = []
     cum_good_rate = []
     for i in range(len(res)):
-        cum_bad_rate.append(float(sum(res['bad'].iloc[i:len(res)])) / float(total_bad))
-        cum_good_rate.append(float(sum(res['good'].iloc[i:len(res)])) / float(total_good))
+        cum_bad_rate.append(float(sum(res['bad'].loc[i:len(res)])) / float(total_bad))
+        cum_good_rate.append(float(sum(res['good'].loc[i:len(res)])) / float(total_good))
     res['cum_bad_rate'] = pd.Series(cum_bad_rate, index=res.index)
     res['cum_good_rate'] = pd.Series(cum_good_rate, index=res.index)
     res['KS'] = abs(res['cum_bad_per'] - res['cum_good_per'])
     AUC = []
-    auc_0 = 0.5 * res['cum_bad_per'].iloc[0] * res['cum_good_per'].iloc[0]
+    auc_0 = 0.5 * res['cum_bad_per'].loc[0] * res['cum_good_per'].loc[0]
     AUC.append(auc_0)
     for i in range(1, len(res)):
-        value = 0.5 * float(res['cum_bad_per'].iloc[i] + res['cum_bad_per'].iloc[i - 1]) * float(
-            res['cum_good_per'].iloc[i] - res['cum_good_per'].iloc[i - 1])
+        value = 0.5 * float(res['cum_bad_per'].loc[i] + res['cum_bad_per'].loc[i - 1]) * float(
+            res['cum_good_per'].loc[i] - res['cum_good_per'].loc[i - 1])
         AUC.append(value)
     res['AUC'] = pd.Series(AUC, index=res.index)
     return res
@@ -1117,8 +1117,8 @@ from sklearn.metrics import roc_curve, auc
 
 def get_roc_curve(df_train_ss, flag_name, pred_var, data_name, cut_name):
     plt.figure(data_name)
-    y_train = df_train_ss[flag_name].as_matrix()
-    y_score = df_train_ss[pred_var].as_matrix()
+    y_train = df_train_ss[flag_name].values
+    y_score = df_train_ss[pred_var].values
     # Compute ROC curve and ROC area for each class
     fpr, tpr, _ = roc_curve(y_train, y_score)
     roc_auc = auc(fpr, tpr)
@@ -1179,7 +1179,7 @@ def get_AR_KS_res_amount(df_train, df_test, var_list, flag_name, cut_num, score_
     # get_roc_curve(df_train_score, 'flag', 'p', 'train', 'amount')
     if df_test.any().any():
         flag_test = df_test[flag_name].tolist()
-        x_test = df_test[var_list].as_matrix()
+        x_test = df_test[var_list].iloc[:, :].values
         x_test = sm.add_constant(x_test)
         yp_test = result.predict(x_test).tolist()
         df_test_score, A, B = cal_score(yp_test, flag_test, base_score, double_score, odds)
@@ -1272,7 +1272,7 @@ def get_AR_KS_res_score(df_train, df_test, var_list, flag_name, cut_num, score_t
     get_roc_curve(df_train_score, 'flag', 'p', 'train', 'score')
     if df_test.any().any():
         flag_test = df_test[flag_name].tolist()
-        x_test = df_test[var_list].as_matrix()
+        x_test = df_test[var_list].iloc[:, :].values
         x_test = sm.add_constant(x_test)
         yp_test = result.predict(x_test).tolist()
         df_test_score, A, B = cal_score(yp_test, flag_test, base_score, double_score, odds)
@@ -1423,7 +1423,7 @@ def select_var_part(df_woe_train, df_woe_test, filepath, output_file, flag_name,
         iv_var.to_excel(writer, 'model_var_score', startrow=i)
         len_df = iv_var.shape[0] + 1
         i += len_df + 2
-    df_woe = iv_info_s.ix[iv_info_s['var'].isin(final_selected_var),]
+    df_woe = iv_info_s.loc[iv_info_s['var'].isin(final_selected_var),]
     # res_final_model_amount[2].to_excel(writer,'fin_model_indicator_amount')
     res_final_model_amount[3].to_excel(writer, 'model_trainset_indicator_amount')
     res_final_model_amount[4].to_excel(writer, 'model_tsetset_indicator_amount')
@@ -1442,21 +1442,21 @@ def scorecard2sql(iv_file):
     df1=df1[(df1['Bin'].isna()==False)&(df1['Bin']!='Bin')]
     df1.reset_index(drop=True,inplace=True)
     for i in df1.index.tolist():
-        if df1.iloc[i,1]!=df1.iloc[i-1,1]:
-            print(',case ',end='')
-        if ',' in str(df1.iloc[i,0]):
-            if '-inf' in str(df1.iloc[i,0]):
-                print('when '+str(df1.loc[i,'var'])+' <= '+df1.iloc[i,0].strip('(]').split(',')[1]+' then '+str(df1.loc[i,'score']))        
-            elif 'inf' in str(df1.iloc[i,0]):
-                print('when '+str(df1.loc[i,'var'])+' > '+df1.iloc[i,0].strip('(]').split(',')[0]+' then '+str(df1.loc[i,'score'])) 
+        if df1.loc[i, 1] != df1.loc[i-1, 1]:
+            print(',case ', end='')
+        if ',' in str(df1.loc[i, 0]):
+            if '-inf' in str(df1.loc[i, 0]):
+                print('when '+str(df1.loc[i, 'var'])+' <= '+df1.loc[i,0].strip('(]').split(',')[1]+' then '+str(df1.loc[i, 'score']))
+            elif 'inf' in str(df1.loc[i, 0]):
+                print('when '+str(df1.loc[i, 'var'])+' > '+df1.loc[i,0].strip('(]').split(',')[0]+' then '+str(df1.loc[i, 'score']))
             else:
-                print('when '+str(df1.loc[i,'var'])+' between '+df1.iloc[i,0].strip('(]').split(',')[0]+' and '+df1.iloc[i,0].strip('(]').split(',')[1]+ ' then '+str(df1.loc[i,'score']) )
-        elif (df1.loc[i,'Bin']=='-99998')|(df1.loc[i,'Bin']=='-99998.0')|(df1.loc[i,'Bin']==-99998):
-            print('when '+str(df1.loc[i,'var'])+' is null or  length('+str(df1.loc[i,'var'])+')=0 then '+str(df1.loc[i,'score']) )
+                print('when '+str(df1.loc[i,'var'])+' between '+df1.loc[i,0].strip('(]').split(',')[0]+' and '+df1.loc[i, 0].strip('(]').split(',')[1] + ' then '+str(df1.loc[i,'score']))
+        elif (df1.loc[i,'Bin'] == '-99998')|(df1.loc[i,'Bin']=='-99998.0')|(df1.loc[i, 'Bin']==-99998):
+            print('when '+str(df1.loc[i,'var'])+' is null or  length('+str(df1.loc[i, 'var'])+')=0 then '+str(df1.loc[i, 'score']))
         else:
-            print('when '+str(df1.loc[i,'var'])+" = '"+str(df1.loc[i,'Bin'])+"' then "+str(df1.loc[i,'score']) )
-        if i==df1.shape[0]-1:
+            print('when '+str(df1.loc[i,'var'])+" = '"+str(df1.loc[i, 'Bin'])+"' then "+str(df1.loc[i, 'score']))
+        if i == df1.shape[0]-1:
             print('end')
             break
-        if df1.iloc[i,1]!=df1.iloc[i+1,1]:
+        if df1.loc[i, 1] != df1.loc[i+1, 1]:
             print('end')
