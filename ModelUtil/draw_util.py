@@ -14,6 +14,13 @@ import itertools
 import seaborn as sns
 from matplotlib import rcParams
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from prettytable import PrettyTable
+
+def format_dataframe(df):
+    data = PrettyTable([''] + list(df.columns))
+    for row in df.itertuples():
+        data.add_row(row)
+    return data
 
 def get_confusion_matrix(cm, classes, title='Confusion matrix', cmap=plt.cm.Paired, filename=None):
 
@@ -40,25 +47,6 @@ def get_confusion_matrix(cm, classes, title='Confusion matrix', cmap=plt.cm.Pair
     else:
         plt.savefig(filename, bbox_inches='tight', format='png', dpi=300, pad_inches=0, transparent=True)
 
-
-def get_correlation(df, figsize=(8, 6)):
-    """
-    :param df: pandas.Dataframe
-    :param figsize:
-    :return:
-    """
-
-    plt.figure(figsize=figsize)
-    colormap = plt.cm.viridis
-    plt.title('Pearson Correlation of Features', y=1.05, size=15)
-    sns.heatmap(df.astype(float).corr(),
-                linewidths=0.1,
-                vmax=1.0,
-                square=True,
-                cmap=colormap,
-                linecolor='white',
-                annot=True)
-    plt.show()
 
 
 def get_feature_correlation(df, x1_name, x2_name):
@@ -176,31 +164,6 @@ def get_feature_distribution(df, target_name, feature_name):
         plt.text(a, b, '%.2f' % b, ha='center', va='bottom', fontsize=9)
 
 
-def get_all_null(df):
-    data_tmp = df.copy()
-    data_tmp['n_null'] = data_tmp.isnull().sum(axis=1)
-    data_tmp = data_tmp.sort_values('n_null')
-    t = data_tmp.n_null.values
-    x = range(len(t))
-    plt.figure(figsize=(8, 5))
-    plt.scatter(x, t, c='b')
-    plt.xlim([0, data_tmp.shape[0]])
-    plt.xlabel('rank')
-    plt.ylabel('null nums')
-    plt.title('distribution of null nums')
-    plt.savefig('null_nums.png', dpi=500)
-    plt.show()
-    del data_tmp
-
-
-def get_null_pct_by_label(df):
-    plt.figure(figsize=(20, 7))
-    plt.plot(df['label_0'], 'r', label='y=0')
-    plt.plot(df['label_0'], 'g', label='y=1')
-    plt.legend()
-    plt.xticks(rotation=90)
-    plt.show()
-
 
 def get_iv_plt(iv_map_dict):
     plt.figure(figsize=(20, 7))
@@ -273,3 +236,71 @@ def get_report_picture(train_true, train_pred, test_true, test_pred):
     ax4.set_ylabel('True Positive Rate')
     ax4.set_title('Test ROC curve')
     ax4.legend(loc="lower right")
+
+
+def get_badpct_by_time(df, file_name=None):
+    plt.figure(figsize=(8, 5))
+    df['total'].plot(kind='bar', color="yellow", width=0.4)
+    plt.ylabel('总数')
+    plt.title('样本随时间分布')
+    plt.legend(["总数"])
+    df['bad_pct'].plot(color='green', secondary_y=True, style='-o', linewidth=5)
+    plt.ylabel('坏样本（比例）')
+    plt.legend(["比例"])
+    plt.show()
+    if file_name:
+        plt.savefig(file_name + ".png")
+
+
+def get_null_pct_by_label(df, file_name=None):
+    plt.figure(figsize=(20, 7))
+    plt.plot(df['label_0'], 'r', label='y=0')
+    plt.plot(df['label_1'], 'g', label='y=1')
+    plt.legend()
+    plt.xticks(rotation=90)
+    plt.show()
+    if file_name:
+        plt.savefig(file_name+".png", dpi=500)
+
+def get_all_null(df, file_name=None):
+    plt.figure(figsize=(8, 5))
+    plt.scatter(df.x, df.y, c='b')
+    plt.xlim([0, len(df.x)])
+    plt.xlabel('样本排序')
+    plt.ylabel('null值占比')
+    plt.title('distribution of null nums')
+    plt.show()
+    if file_name:
+        plt.savefig(file_name + '.png', dpi=500)
+
+def get_correlation(df, file_name=None):
+    """
+    :param df: pandas.Dataframe
+    :param figsize:
+    :return:
+    """
+
+    plt.figure(figsize=(20, 20))
+    colormap = plt.cm.viridis
+    plt.title('Pearson Correlation of Features', y=1.05, size=15)
+    sns.heatmap(df.astype(float).corr(),
+                linewidths=0.1,
+                vmax=1.0,
+                square=True,
+                cmap=colormap,
+                linecolor='white',
+                annot=True)
+    plt.show()
+    if file_name:
+        plt.savefig(file_name + '.png', dpi=500)
+
+def get_vif_value(df, file_name=None):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df.x, df.y, c='b')
+    plt.xlim([0, len(df.x)])
+    plt.xlabel('样本排序')
+    plt.ylabel('null值占比')
+    plt.title('distribution of null nums')
+    plt.show()
+    if file_name:
+        plt.savefig(file_name + '.png', dpi=500)

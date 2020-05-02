@@ -45,12 +45,12 @@ def change_date_format(date, former_format='%Y%m%d',to_format ='%Y-%m-%d'):
     if former_format == to_format:
         return date
     else:
-        date = datetime.datetime.strptime(date,former_format)
+        date = datetime.datetime.strptime(date, former_format)
         return date.strftime(to_format)
 
 
 # 计算日期加减
-def date_calc(date, delta_day,date_format = None):
+def date_calc(date, delta_day, date_format=None):
     ##能够自动判断string作为date的类型，然后根据delta_day(+ 代表往后，-代表往前）推几天
     ##支持 '%Y-%m-%d' '%Y%m%d' '%Y/%m/%d' 的自动判断，如果是其他的形式，可以写在date_format中
     ##默认返回相同的格式
@@ -122,3 +122,21 @@ def delta_hours(from_dt,to_dt,from_dt_format = None,to_dt_format = None):
     return abs(hours)
 
 
+def get_std_time(tmStr, level="m"):
+    if re.match('^\d{8}$', tmStr):
+        formatDate = datetime.datetime.strptime(tmStr, "%Y%m%d")
+    elif re.match('^\d{4}-\d{2}-\d{2}$', tmStr):
+        formatDate = datetime.datetime.strptime(tmStr, "%Y-%m-%d")
+    elif re.match('^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', tmStr):
+        formatDate = datetime.datetime.strptime(tmStr[:10], "%Y-%m-%d")
+    else:
+        formatDate = None
+    if formatDate:
+        if level == "y":
+            return formatDate.strftime("%Y")
+        elif level == "m":
+            return formatDate.strftime("%Y%m")
+        else:
+            return formatDate.strftime("%Y%m%d")
+    else:
+        print("时间格式不合法，无法分析！")

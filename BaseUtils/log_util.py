@@ -8,6 +8,8 @@
 @desc:
 '''
 
+import sys
+sys.path.append("..")
 
 import os
 import logging
@@ -16,7 +18,7 @@ from configs import log_config
 class LogUtil(object):
     def __init__(self, log_name=None):
         if log_name is None:
-            log_name = log_config['log_name'] + '.log'
+            log_name = log_config['log_name']
         self.logger = logging.getLogger(log_name)
         self.logger.setLevel(logging.INFO)
         # 定义输出格式
@@ -47,6 +49,6 @@ class LogUtil(object):
 
 if __name__ == '__main__':
 
-    t = LogUtil(log_name='test')
+    t = LogUtil()
     t.info('hello 1')
     t.info('hello 2')
