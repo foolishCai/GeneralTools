@@ -263,9 +263,9 @@ def get_null_pct_by_label(df, file_name=None):
         plt.savefig(file_name+".png", dpi=500)
 
 def get_all_null(df, file_name=None):
-    plt.figure(figsize=(8, 5))
-    plt.scatter(df.x, df.y, c='b')
-    plt.xlim([0, len(df.x)])
+    plt.figure(figsize=(15, 5))
+    plt.scatter(df.num, df.null_pct, c='b')
+    plt.xlim([0, len(df.index)])
     plt.xlabel('样本排序')
     plt.ylabel('null值占比')
     plt.title('distribution of null nums')
