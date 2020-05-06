@@ -14,10 +14,7 @@ sys.path.append("..")
 import pandas as pd
 import numpy as np
 import operator
-import math
-from collections import Counter
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from interval import Interval
 from scipy.stats import ks_2samp
 
 from BaseUtils import log

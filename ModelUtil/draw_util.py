@@ -293,14 +293,3 @@ def get_correlation(df, file_name=None):
     plt.show()
     if file_name:
         plt.savefig(file_name + '.png', dpi=500)
-
-def get_vif_value(df, file_name=None):
-    plt.figure(figsize=(8, 6))
-    plt.scatter(df.x, df.y, c='b')
-    plt.xlim([0, len(df.x)])
-    plt.xlabel('样本排序')
-    plt.ylabel('null值占比')
-    plt.title('distribution of null nums')
-    plt.show()
-    if file_name:
-        plt.savefig(file_name + '.png', dpi=500)
