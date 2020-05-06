@@ -139,4 +139,4 @@ def get_std_time(tmStr, level="m"):
         else:
             return formatDate.strftime("%Y%m%d")
     else:
-        print("时间格式不合法，无法分析！")
+        raise Exception("Format Error!")

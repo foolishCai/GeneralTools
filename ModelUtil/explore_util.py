@@ -37,14 +37,19 @@ class OriginExplore(object):
             self.max_various_values = max_various_values
         else:
             self.max_various_values = int(self.df.shape[0]/10)
-        self.time_col = time_col
-        self.time_level = time_level
         if time_col and time_level:
             from CommonUtils.time_util import get_std_time
-            self.df["format_date"] = self.df[self.time_col].map(lambda x: get_std_time(x, level=self.time_level))
-            self.ids_cols.append('format_date')
-            self.psi_threshold = psi_threshold
-            self.ks_threshold = ks_threshold
+            try:
+                self.df["format_date"] = self.df[self.time_col].map(lambda x: get_std_time(x, level=self.time_level))
+                self.time_col = time_col
+                self.time_level = time_level
+                self.ids_cols.append('format_date')
+                self.psi_threshold = psi_threshold
+                self.ks_threshold = ks_threshold
+            except:
+                self.log.info("时间格式错误，无法进行时间维度分析")
+                self.time_col = None
+                self.time_level = None
         self.corr_threshold = corr_threshold
         self.vif_threshold = vif_threshold
 
