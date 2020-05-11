@@ -129,7 +129,7 @@ def new_ks_auto(data_df, total_rec, piece, rate, good_name, bad_name):
 # the merge function part
 # first, we need to define a IV calculator function. The input should be the knots list and the data with unique value's
 # black flag count. The result returned by the function will be the IV list of these tiny bins
-def IV_calculator(data_df, good_name, bad_name, knots_list):
+def  IV_calculator(data_df, good_name, bad_name, knots_list):
     # to improve the efficiency of the calculation, I first split the df into a bunch of smaller data frames and put
     # them into a list. Then I Use the map function to do some transformation to calculate the IV value for each small bin
     temp_df_list = []
@@ -309,7 +309,7 @@ from math import isnan
 
 def var_woe(x, bin_dic, not_in_list):
     val = None
-    if pd.isnull(x) or isnan(x) or x in none_list:
+    if pd.isnull(x) or isnan(x) or x in not_in_list:
         for woe in bin_dic:
             if bin_dic[woe] in ['nan', 'NaN']:
                 val = woe
