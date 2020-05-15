@@ -2,11 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/ModelUtil/monotonic_woe_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/GeneralTools.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GeneralTools.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q102_levelOrder.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q136_singleNumber.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q55_MinStack.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q560_subarraySum.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/monotonic_woe_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/monotonic_woe_util.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -37,7 +38,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="vcs.Git" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -151,7 +152,13 @@
       <workItem from="1583373090598" duration="4247000" />
       <workItem from="1583474343785" duration="23000" />
       <workItem from="1588728967981" duration="47294000" />
-      <workItem from="1589158810687" duration="1042000" />
+      <workItem from="1589158810687" duration="4747000" />
+      <workItem from="1589208372828" duration="1000" />
+      <workItem from="1589243808065" duration="7558000" />
+      <workItem from="1589376708963" duration="1216000" />
+      <workItem from="1589425901930" duration="2015000" />
+      <workItem from="1589428568683" duration="2167000" />
+      <workItem from="1589435254981" duration="7084000" />
     </task>
     <servers />
   </component>
@@ -159,52 +166,14 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="184" y="112" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1577949347765">
+    <state x="-1451" y="190" key="SettingsEditor" timestamp="1589435601241">
+      <screen x="-1920" y="23" width="1920" height="1057" />
+    </state>
+    <state x="-1451" y="190" key="SettingsEditor/0.23.1400.877/-1920.23.1920.1057@-1920.23.1920.1057" timestamp="1589435601241" />
+    <state x="385" y="196" width="670" height="676" key="search.everywhere.popup" timestamp="1589434616677">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state x="184" y="112" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1440.900@0.0.1440.900" timestamp="1577949347765" />
-    <state x="277" y="52" key="CommitChangelistDialog2" timestamp="1578019713185">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state x="277" y="52" key="CommitChangelistDialog2/0.0.1440.900@0.0.1440.900" timestamp="1578019713185" />
-    <state x="507" y="212" key="FileChooserDialogImpl" timestamp="1575351510676">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state x="507" y="212" key="FileChooserDialogImpl/0.0.1440.900@0.0.1440.900" timestamp="1575351510676" />
-    <state width="1398" height="245" key="GridCell.Tab.0.bottom" timestamp="1577957102671">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state width="1398" height="245" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1577957102671" />
-    <state width="1398" height="245" key="GridCell.Tab.0.center" timestamp="1577957102669">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state width="1398" height="245" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1577957102669" />
-    <state width="1398" height="245" key="GridCell.Tab.0.left" timestamp="1577957102668">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state width="1398" height="245" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1577957102668" />
-    <state width="1398" height="245" key="GridCell.Tab.0.right" timestamp="1577957102670">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state width="1398" height="245" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1577957102670" />
-    <state x="90" y="68" key="SettingsEditor" timestamp="1578019503400">
-      <screen x="0" y="23" width="1440" height="826" />
-    </state>
-    <state x="90" y="49" key="SettingsEditor/0.0.1440.900/-1920.0.1920.1080@0.0.1440.900" timestamp="1576825432491" />
-    <state x="229" y="89" key="SettingsEditor/0.0.1440.900@0.0.1440.900" timestamp="1575351541194" />
-    <state x="90" y="68" key="SettingsEditor/0.23.1440.826@0.23.1440.826" timestamp="1578019503400" />
-    <state x="399" y="269" key="com.intellij.ide.util.TipDialog" timestamp="1575351455052">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state x="399" y="269" key="com.intellij.ide.util.TipDialog/0.0.1440.900@0.0.1440.900" timestamp="1575351455052" />
-    <state x="509" y="374" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1575363297062">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state x="509" y="374" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1440.900@0.0.1440.900" timestamp="1575363297062" />
-    <state x="446" y="321" key="git4idea.rebase.GitRebaseDialog" timestamp="1578019552142">
-      <screen x="0" y="0" width="1440" height="900" />
-    </state>
-    <state x="446" y="321" key="git4idea.rebase.GitRebaseDialog/0.0.1440.900@0.0.1440.900" timestamp="1578019552142" />
+    <state x="385" y="196" width="670" height="676" key="search.everywhere.popup/0.0.1440.900/-1920.0.1920.1080@0.0.1440.900" timestamp="1589434616677" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/GeneralTools$makeTree.coverage" NAME="makeTree Coverage Results" MODIFIED="1577955723259" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/WorkUtils" />

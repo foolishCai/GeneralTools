@@ -79,13 +79,14 @@ def best_KS_knot_calculator(data, good_name, bad_name, start_knot, end_knot, rat
             # the index find here is not the final result, we should find the data's position in the outer data set
             index = getAllindex(list(abs(default_CDF - undefault_CDF)), ks_value)
             # print index
-            return temp_df.index[max(index)]#取KS最大点做切分
+            return temp_df.index[max(index)]  # 取KS最大点做切分
         else:
             return None
     else:
         return None
 
-#递归函数，迭代切分
+
+# 递归函数，迭代切分
 def best_ks_knots_helper(data, total_len, max_times, good_name, bad_name, rate, start_knot, end_knot, current_time):
     # define the base case
     # here, we should first find out the total length of the raw data. Since the elements in the input data
@@ -97,7 +98,7 @@ def best_ks_knots_helper(data, total_len, max_times, good_name, bad_name, rate, 
     temp_df = data.loc[start_knot:end_knot]
     temp_len = sum(temp_df[good_name]) + sum(temp_df[bad_name])
     # due to the restriction to the number of elements in the tiny bin
-    #限制箱内最小样本数
+    # 限制箱内最小样本数
     if temp_len < rate * total_len * 2 or current_time >= max_times:
         return []
     new_knot = best_KS_knot_calculator(data, good_name, bad_name, start_knot, end_knot, rate)
@@ -121,7 +122,7 @@ def new_ks_auto(data_df, total_rec, piece, rate, good_name, bad_name):
     # since we are gonna to use reconstruct the whole function, thus I choose not to add the two marginal points to the
     # result list
     # temp_result_list = temp_result_list + [0, len(data_df)-1]
-    temp_result_list=[x for x in temp_result_list if x is not None]#剔除none切分点
+    temp_result_list = [x for x in temp_result_list if x is not None]  # 剔除none切分点
     temp_result_list.sort()
     return temp_result_list
 
@@ -129,7 +130,7 @@ def new_ks_auto(data_df, total_rec, piece, rate, good_name, bad_name):
 # the merge function part
 # first, we need to define a IV calculator function. The input should be the knots list and the data with unique value's
 # black flag count. The result returned by the function will be the IV list of these tiny bins
-def  IV_calculator(data_df, good_name, bad_name, knots_list):
+def IV_calculator(data_df, good_name, bad_name, knots_list):
     # to improve the efficiency of the calculation, I first split the df into a bunch of smaller data frames and put
     # them into a list. Then I Use the map function to do some transformation to calculate the IV value for each small bin
     temp_df_list = []
@@ -150,7 +151,7 @@ def  IV_calculator(data_df, good_name, bad_name, knots_list):
     woe_list = list(np.log(good_percent_series / bad_percent_series))
     # here, since we want to make sure the woe of the result bins is monotonic, thus we add a justification statement
     # here, if it is not monotonic, then it will be discarded and the return will be None
-    if sorted(woe_list) != woe_list and sorted(woe_list, reverse=True) != woe_list:#判断是否单调
+    if sorted(woe_list) != woe_list and sorted(woe_list, reverse=True) != woe_list:  # 判断是否单调
         return None
     IV_series = (good_percent_series - bad_percent_series) * np.log(good_percent_series / bad_percent_series)
     if np.inf in list(IV_series) or -np.inf in list(IV_series):
@@ -161,17 +162,17 @@ def  IV_calculator(data_df, good_name, bad_name, knots_list):
 
 # combination_helper function
 def combine_helper(data_df, good_name, bad_name, piece_num, cut_off_list):
-    knots_list = list(combinations(cut_off_list, piece_num - 1))#切分点组合
+    knots_list = list(combinations(cut_off_list, piece_num - 1))  # 切分点组合
     # here we do some transformation to the knots list, add the start knot and end knot to all the elements in the list
     # knots_list = map(lambda x: sorted(tuple(set(x + (0, len(data_df) - 1)))), knots_list)
     knots_list = [sorted(x + (0, len(data_df) - 1)) for x in knots_list]
-    IV_for_bins = [IV_calculator(data_df, good_name, bad_name, x) for x in knots_list]#计算iv，并且判断woe是否单调，只输出单调的切割方式
+    IV_for_bins = [IV_calculator(data_df, good_name, bad_name, x) for x in knots_list]  # 计算iv，并且判断woe是否单调，只输出单调的切割方式
     filtered_IV = list([x for x in IV_for_bins if x is not None])
     if len(filtered_IV) == 0:
         print(('There are no suitable division for the data set with ' + str(piece_num) + ' pieces'))
         return None
     else:
-        if len(getAllindex(IV_for_bins, max(filtered_IV))) > 0:#取iv最大的组合
+        if len(getAllindex(IV_for_bins, max(filtered_IV))) > 0:  # 取iv最大的组合
             target_index = getAllindex(IV_for_bins, max(filtered_IV))[0]
             return knots_list[target_index]
         else:
@@ -255,8 +256,8 @@ def important_indicator_calculator(data_df, good_name, bad_name, factor_name, kn
 # let's redefine this function
 def all_information(data_df, na_df, total_rec, piece, rate, factor_name, bad_name, good_name):
     # to get the final result of the binning part, we need two process: split and merge
-    split_knots = new_ks_auto(data_df, total_rec, piece, rate, good_name, bad_name) #分箱
-    best_knots = combine_tiny_bins(data_df, good_name, bad_name, piece, split_knots) #合并分箱
+    split_knots = new_ks_auto(data_df, total_rec, piece, rate, good_name, bad_name)  # 分箱
+    best_knots = combine_tiny_bins(data_df, good_name, bad_name, piece, split_knots)  # 合并分箱
     return important_indicator_calculator(data_df, good_name, bad_name, factor_name, best_knots, na_df)
 
 
@@ -271,12 +272,12 @@ def Best_KS_Bin(flag_name, factor_name, data=pd.DataFrame(), bad_name='bad', goo
         return pd.DataFrame()
     work_data = data.loc[data.index, [factor_name, flag_name]]
     # since the data without flag is meaningless thus, we can use the helper function to help us filer these data
-    work_data = verify_df_two(work_data, flag_name)#检查label数据，并转成int
+    work_data = verify_df_two(work_data, flag_name)  # 检查label数据，并转成int
     if len(work_data) == 0:
         return pd.DataFrame
     # after that, we want to separate the current df into two parts, NA and non-NA
     # the very first thing here should be transforming the type of value in factor_name column into str type
-    work_data[factor_name] = work_data[factor_name].astype(str)#将特征转换成str，以便区分none值
+    work_data[factor_name] = work_data[factor_name].astype(str)  # 将特征转换成str，以便区分none值
     # since there will be the None and nan be transformed into the str type, thus we need to add some default value into
     # the not_in_list, the set here may be redundant
     not_in_list = not_in_list + ['None', 'nan']
@@ -292,7 +293,7 @@ def Best_KS_Bin(flag_name, factor_name, data=pd.DataFrame(), bad_name='bad', goo
     total_rec = work_data.shape[0]
     min_bin_size_rate = min_bin_size / float(total_rec)
     min_bin_size_r = min(rate, min_bin_size_rate)
-    #区分nadf和nonnadf，nadf不进入分箱
+    # 区分nadf和nonnadf，nadf不进入分箱
     result = all_information(non_na_df, na_df, total_rec, piece, min_bin_size_r, factor_name, bad_name, good_name)
     return result
 
@@ -304,7 +305,6 @@ def Best_KS_Bin(flag_name, factor_name, data=pd.DataFrame(), bad_name='bad', goo
 ####map woe
 # Create a dataframe with the variable values replaced by woe
 from math import isnan
-
 
 
 def var_woe(x, bin_dic, not_in_list):
@@ -355,8 +355,8 @@ def agg_func(x):
 
 
 def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame(), not_var_list=[], not_in_list=[],
-           target_var_list=[],
-           flag_var_list=['custr_nbr'],Bin_rate=0.05,Bin_max_piece=5):
+            target_var_list=[],
+            flag_var_list=['custr_nbr'], Bin_rate=0.05, Bin_max_piece=5):
     """
     :param flag_name: bad flag
     :param data_test/data_train: target data
@@ -399,7 +399,7 @@ def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame
     i = 0
     for var in target_var_list:
         # print(0)
-        var_stat = Best_KS_Bin(flag_name, var, data_train,rate=Bin_rate,piece=Bin_max_piece) #bestKS分箱
+        var_stat = Best_KS_Bin(flag_name, var, data_train, rate=Bin_rate, piece=Bin_max_piece)  # bestKS分箱
         # print(1)
         var_stat['var'] = var
         var_stat.to_excel(writer, 'bin', startrow=i)
@@ -428,13 +428,13 @@ def df_woe1(filepath, output_file, flag_name, data_test, data_train=pd.DataFrame
     writer.save()
     writer.close()
     for i in not_var_list:
-        data_woe_train[i]=data_train[i]
+        data_woe_train[i] = data_train[i]
     data_woe_train.to_csv('{}/train_woe_{}.csv'.format(filepath, output_file), index=False)
     if data_test.any().any():
         for i in not_var_list:
-            data_woe_test[i]=data_test[i]
+            data_woe_test[i] = data_test[i]
         data_woe_test.to_csv('{}/test_woe_{}.csv'.format(filepath, output_file), index=False)
-        return  data_woe_train,data_woe_test
+        return data_woe_train, data_woe_test
     else:
         return data_woe_train
 
@@ -443,40 +443,45 @@ def dist_col_stat(df, key_, label, output_filename, dist_list, value_count=20, d
     bad_count = df[label].sum()
     df_len = df.shape[0]
     del_list = []
-    writer = pd.ExcelWriter("{}_dist.xlsx".format(output_filename),)
+    writer = pd.ExcelWriter("{}_dist.xlsx".format(output_filename), )
     j = 0
     for i in dist_list:
-        locals()[i+'_1'] = df[[i, label, key_]]
-        locals()[i+'_2'] = locals()[i+'_1'][label].groupby(locals()[i+'_1'][i]).sum().rename('bad').reset_index()
-        locals()[i+'_3'] = locals()[i+'_1'][key_].groupby(locals()[i+'_1'][i]).count().rename(i+'_count').reset_index()
-        locals()[i+'_4'] = pd.merge(locals()[i+'_3'], locals()[i+'_2'], on=i, how='left')
-        locals()[i+'_4']['bad_rate'] = locals()[i+'_4']['bad']/locals()[i+'_4'][i+'_count']
-        locals()[i+'_4']['good_percent'] = (locals()[i+'_4'][i+'_count']-locals()[i+'_4']['bad'])/(df_len-bad_count)
-        locals()[i+'_4']['bad_percent'] = locals()[i+'_4']['bad']/bad_count
-        locals()[i+'_4']['WOE'] = np.log(locals()[i+'_4']['good_percent'] / locals()[i+'_4']['bad_percent'])
-        locals()[i+'_4']['rank_'+i]=locals()[i+'_4'].bad_rate.rank(axis=0, method='first')
-        locals()[i+'_4']['KS'] = 0
-        locals()[i+'_4']['var'] = i
-        locals()[i+'_4']['good'] = locals()[i+'_4'][i+'_count']-locals()[i+'_4']['bad']
-        locals()[i] = locals()[i+'_4'][[i,'rank_'+i]]
-        if locals()[i+'_4'].shape[0] > value_count: #删除离散属性值过多的特征
-            df[i]=df.merge(locals()[i], how='left', on=i)['rank_'+i]
+        locals()[i + '_1'] = df[[i, label, key_]]
+        locals()[i + '_2'] = locals()[i + '_1'][label].groupby(locals()[i + '_1'][i]).sum().rename('bad').reset_index()
+        locals()[i + '_3'] = locals()[i + '_1'][key_].groupby(locals()[i + '_1'][i]).count().rename(
+            i + '_count').reset_index()
+        locals()[i + '_4'] = pd.merge(locals()[i + '_3'], locals()[i + '_2'], on=i, how='left')
+        locals()[i + '_4']['bad_rate'] = locals()[i + '_4']['bad'] / locals()[i + '_4'][i + '_count']
+        locals()[i + '_4']['good_percent'] = (locals()[i + '_4'][i + '_count'] - locals()[i + '_4']['bad']) / (
+                    df_len - bad_count)
+        locals()[i + '_4']['bad_percent'] = locals()[i + '_4']['bad'] / bad_count
+        locals()[i + '_4']['WOE'] = np.log(locals()[i + '_4']['good_percent'] / locals()[i + '_4']['bad_percent'])
+        locals()[i + '_4']['rank_' + i] = locals()[i + '_4'].bad_rate.rank(axis=0, method='first')
+        locals()[i + '_4']['KS'] = 0
+        locals()[i + '_4']['var'] = i
+        locals()[i + '_4']['good'] = locals()[i + '_4'][i + '_count'] - locals()[i + '_4']['bad']
+        locals()[i] = locals()[i + '_4'][[i, 'rank_' + i]]
+        if locals()[i + '_4'].shape[0] > value_count:  # 删除离散属性值过多的特征
+            df[i] = df.merge(locals()[i], how='left', on=i)['rank_' + i]
             del_list.append(i)
             try:
-                test_df[i]=test_df.merge(locals()[i],how='left',on=i)['rank_'+i]
+                test_df[i] = test_df.merge(locals()[i], how='left', on=i)['rank_' + i]
             except:
                 pass
         else:
-            locals()[i+'_4']['IV']=(locals()[i+'_4']['good_percent']-locals()[i+'_4']['bad_percent'])*locals()[i+'_4']['WOE']
-            df[i] = df.merge(locals()[i+'_4'], how='left', on=i)['WOE']
+            locals()[i + '_4']['IV'] = (locals()[i + '_4']['good_percent'] - locals()[i + '_4']['bad_percent']) * \
+                                       locals()[i + '_4']['WOE']
+            df[i] = df.merge(locals()[i + '_4'], how='left', on=i)['WOE']
             try:
-                test_df[i] = test_df.merge(locals()[i+'_4'], how='left', on=i)['WOE']
+                test_df[i] = test_df.merge(locals()[i + '_4'], how='left', on=i)['WOE']
             except:
                 pass
-            locals()[i+'_4'].sort_values('rank_'+i).drop(['rank_'+i, 'good_percent', 'bad_percent'], axis=1).rename(columns ={i: 'Bin', i+'_count': 'total_count'}).to_excel(writer, 'dist_bin', startrow=j)
-            j += locals()[i+'_4'].shape[0]+2
-    
-    writer.save()        
+            locals()[i + '_4'].sort_values('rank_' + i).drop(['rank_' + i, 'good_percent', 'bad_percent'],
+                                                             axis=1).rename(
+                columns={i: 'Bin', i + '_count': 'total_count'}).to_excel(writer, 'dist_bin', startrow=j)
+            j += locals()[i + '_4'].shape[0] + 2
+
+    writer.save()
     writer.close()
     print(del_list)
     print('Those features have too many types!!!')
@@ -484,11 +489,10 @@ def dist_col_stat(df, key_, label, output_filename, dist_list, value_count=20, d
 
 
 def get_woe_df(df, label, output_path, output_file, dist_col, serial_col, del_col, df_test=pd.DataFrame()):
-    
-    #填充
-    df = df[del_col+dist_col+serial_col]
+    # 填充
+    df = df[del_col + dist_col + serial_col]
     if df_test.shape[0] != 0:
-        df_test = df_test[del_col+dist_col+serial_col]
+        df_test = df_test[del_col + dist_col + serial_col]
         df_test = df_test.reset_index()
     df.fillna(-99998, inplace=True)
     df_test.fillna(-99998, inplace=True)
@@ -496,75 +500,92 @@ def get_woe_df(df, label, output_path, output_file, dist_col, serial_col, del_co
     df = df.reset_index()
 
     if len(dist_col) > 0:
-        df, df_test = dist_col_stat(df, 'index', label, output_path+'/'+output_file, dist_col, value_count=20, del_col=del_col, test_df=df_test)
+        df, df_test = dist_col_stat(df, 'index', label, output_path + '/' + output_file, dist_col, value_count=20,
+                                    del_col=del_col, test_df=df_test)
 
     if len(serial_col) > 0:
         print('Cutting bins...')
-        if df_test.shape[0]==0:
-            df=df_woe1(output_path,output_file,label,df_test,df,not_var_list=del_col+dist_col+['index'],not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=serial_col,flag_var_list=[])        
+        if df_test.shape[0] == 0:
+            df = df_woe1(output_path, output_file, label, df_test, df, not_var_list=del_col + dist_col + ['index'],
+                         not_in_list=['-99998', '-99998.0', -99998, -99998.0], target_var_list=serial_col,
+                         flag_var_list=[])
         else:
-            df,df_test=df_woe1(output_path,output_file,label,df_test,df,not_var_list=del_col+dist_col,not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=serial_col,flag_var_list=[])
-        print(df.shape) 
-         
+            df, df_test = df_woe1(output_path, output_file, label, df_test, df, not_var_list=del_col + dist_col,
+                                  not_in_list=['-99998', '-99998.0', -99998, -99998.0], target_var_list=serial_col,
+                                  flag_var_list=[])
+        print(df.shape)
+
     return df, df_test
 
-def concat_file(output_path,output_file,dist_col,serial_col):
-    #合并
-    writer1=pd.ExcelWriter(output_path+'/'+output_file+'3.xlsx')
-    if len(dist_col)>0:
-        iv_info1=pd.read_excel(output_path+'/'+output_file+'_dist.xlsx')
-        iv_info1['var']=iv_info1['var'].apply(lambda x:str(x))
-        iv_info_ss1=iv_info1[(iv_info1['var']!='nan') & (iv_info1['var']!='var')]
-        iv_info_ss12=iv_info1[(iv_info1['var']!='nan') & (iv_info1['var']!='var')&(iv_info1['Bin']!='-99998.0')&(iv_info1['Bin']!=-99998)]
-        iv_info_ss1.replace('inf',0,inplace=True)
-        fg1=iv_info_ss12[['total_count','var']].groupby(['var']).sum().reset_index()
-#       woe_max1=iv_info_ss1.loc[iv_info_ss1.groupby(['var'])['WOE'].idxmax().tolist(),['var','Bin','WOE']]
-#       woe_min1=iv_info_ss1.loc[iv_info_ss1.groupby(['var'])['WOE'].idxmin().tolist(),['var','Bin','WOE']]
-        iv1=iv_info_ss1['IV'].groupby(iv_info_ss1['var']).sum().reset_index()
-        ks1=iv_info_ss1['KS'].groupby(iv_info_ss1['var']).max().reset_index()
-        iv_ks_info1=iv1.merge(ks1,on='var',how='inner').merge(fg1,on='var',how='inner')#.merge(woe_max1,on='var',how='inner').merge(woe_min1,on='var',how='inner')
-        iv_info1[['Bin','IV','KS','WOE','bad','bad_rate','good','total_count','var']].to_excel(writer1,'bin_detail')
-    else:
-        iv_info1=pd.DataFrame()
-    if len(serial_col)>0:
-        iv_info=pd.read_excel(output_path+'/'+output_file+'.xlsx')
-        iv_info['var']=iv_info['var'].apply(lambda x:str(x))
-        iv_info_ss=iv_info[(iv_info['var']!='nan') & (iv_info['var']!='var')]
-        iv_info_ss2=iv_info[(iv_info['var']!='nan') & (iv_info['var']!='var')&(iv_info['Bin']!='-99998.0')]
-        iv_info_ss.replace('inf',0,inplace=True)
-        fg=iv_info_ss2[['total_count','var']].groupby(['var']).sum().reset_index()
-#       woe_max=iv_info_ss.loc[iv_info_ss.groupby(['var'])['WOE'].idxmax().tolist(),['var','Bin','WOE']]
-#       woe_min=iv_info_ss.loc[iv_info_ss.groupby(['var'])['WOE'].idxmin().tolist(),['var','Bin','WOE']]
-        iv=iv_info_ss['IV'].groupby(iv_info_ss['var']).sum().reset_index()
-        ks=iv_info_ss['KS'].groupby(iv_info_ss['var']).max().reset_index()
-        iv_ks_info=iv.merge(ks,on='var',how='inner').merge(fg,on='var',how='inner')#.merge(woe_max,on='var',how='inner').merge(woe_min,on='var',how='inner')
-        iv_info[['Bin','IV','KS','WOE','bad','bad_rate','good','total_count','var']].to_excel(writer1,'bin_detail',startrow=iv_info1.shape[0]+3)
-    else:
-        iv_info=pd.DataFrame()
 
-    #iv_ks_info=pd.merge(iv,ks,on='var',how='inner')
-    
-    #iv_ks_info1=pd.merge(iv1,ks1,on='var',how='inner')
-    
-    if len(serial_col)>0 and len(dist_col)>0:
-        iv_ks_info_sort=pd.concat([iv_ks_info,iv_ks_info1])
-    elif len(serial_col)>0:
-        iv_ks_info_sort=iv_ks_info
-    elif len(dist_col)>0:
-        iv_ks_info_sort=iv_ks_info1
+def concat_file(output_path, output_file, dist_col, serial_col):
+    # 合并
+    writer1 = pd.ExcelWriter(output_path + '/' + output_file + '3.xlsx')
+    if len(dist_col) > 0:
+        iv_info1 = pd.read_excel(output_path + '/' + output_file + '_dist.xlsx')
+        iv_info1['var'] = iv_info1['var'].apply(lambda x: str(x))
+        iv_info_ss1 = iv_info1[(iv_info1['var'] != 'nan') & (iv_info1['var'] != 'var')]
+        iv_info_ss12 = iv_info1[
+            (iv_info1['var'] != 'nan') & (iv_info1['var'] != 'var') & (iv_info1['Bin'] != '-99998.0') & (
+                        iv_info1['Bin'] != -99998)]
+        iv_info_ss1.replace('inf', 0, inplace=True)
+        fg1 = iv_info_ss12[['total_count', 'var']].groupby(['var']).sum().reset_index()
+        #       woe_max1=iv_info_ss1.loc[iv_info_ss1.groupby(['var'])['WOE'].idxmax().tolist(),['var','Bin','WOE']]
+        #       woe_min1=iv_info_ss1.loc[iv_info_ss1.groupby(['var'])['WOE'].idxmin().tolist(),['var','Bin','WOE']]
+        iv1 = iv_info_ss1['IV'].groupby(iv_info_ss1['var']).sum().reset_index()
+        ks1 = iv_info_ss1['KS'].groupby(iv_info_ss1['var']).max().reset_index()
+        iv_ks_info1 = iv1.merge(ks1, on='var', how='inner').merge(fg1, on='var',
+                                                                  how='inner')  # .merge(woe_max1,on='var',how='inner').merge(woe_min1,on='var',how='inner')
+        iv_info1[['Bin', 'IV', 'KS', 'WOE', 'bad', 'bad_rate', 'good', 'total_count', 'var']].to_excel(writer1,
+                                                                                                       'bin_detail')
+    else:
+        iv_info1 = pd.DataFrame()
+    if len(serial_col) > 0:
+        iv_info = pd.read_excel(output_path + '/' + output_file + '.xlsx')
+        iv_info['var'] = iv_info['var'].apply(lambda x: str(x))
+        iv_info_ss = iv_info[(iv_info['var'] != 'nan') & (iv_info['var'] != 'var')]
+        iv_info_ss2 = iv_info[(iv_info['var'] != 'nan') & (iv_info['var'] != 'var') & (iv_info['Bin'] != '-99998.0')]
+        iv_info_ss.replace('inf', 0, inplace=True)
+        fg = iv_info_ss2[['total_count', 'var']].groupby(['var']).sum().reset_index()
+        #       woe_max=iv_info_ss.loc[iv_info_ss.groupby(['var'])['WOE'].idxmax().tolist(),['var','Bin','WOE']]
+        #       woe_min=iv_info_ss.loc[iv_info_ss.groupby(['var'])['WOE'].idxmin().tolist(),['var','Bin','WOE']]
+        iv = iv_info_ss['IV'].groupby(iv_info_ss['var']).sum().reset_index()
+        ks = iv_info_ss['KS'].groupby(iv_info_ss['var']).max().reset_index()
+        iv_ks_info = iv.merge(ks, on='var', how='inner').merge(fg, on='var',
+                                                               how='inner')  # .merge(woe_max,on='var',how='inner').merge(woe_min,on='var',how='inner')
+        iv_info[['Bin', 'IV', 'KS', 'WOE', 'bad', 'bad_rate', 'good', 'total_count', 'var']].to_excel(writer1,
+                                                                                                      'bin_detail',
+                                                                                                      startrow=
+                                                                                                      iv_info1.shape[
+                                                                                                          0] + 3)
+    else:
+        iv_info = pd.DataFrame()
 
-        
-    iv_ks_info_sort=iv_ks_info_sort.sort_values(by=['IV'],ascending=[False])
-    
-    #writer1=pd.ExcelWriter(output_path+'/'+output_file+'3.xlsx')
-    iv_ks_info_sort.to_excel(writer1,'bin_summary')
-    #iv_info1[['Bin','IV','KS','WOE','bad','bad_rate','good','total_count','var']].to_excel(writer1,'bin_detail')
-    #iv_info.to_excel(writer1,'bin_detail',startrow=iv_info1.shape[0]+3)
+    # iv_ks_info=pd.merge(iv,ks,on='var',how='inner')
+
+    # iv_ks_info1=pd.merge(iv1,ks1,on='var',how='inner')
+
+    if len(serial_col) > 0 and len(dist_col) > 0:
+        iv_ks_info_sort = pd.concat([iv_ks_info, iv_ks_info1])
+    elif len(serial_col) > 0:
+        iv_ks_info_sort = iv_ks_info
+    elif len(dist_col) > 0:
+        iv_ks_info_sort = iv_ks_info1
+
+    iv_ks_info_sort = iv_ks_info_sort.sort_values(by=['IV'], ascending=[False])
+
+    # writer1=pd.ExcelWriter(output_path+'/'+output_file+'3.xlsx')
+    iv_ks_info_sort.to_excel(writer1, 'bin_summary')
+    # iv_info1[['Bin','IV','KS','WOE','bad','bad_rate','good','total_count','var']].to_excel(writer1,'bin_detail')
+    # iv_info.to_excel(writer1,'bin_detail',startrow=iv_info1.shape[0]+3)
     writer1.save()
-    writer1.close() 
+    writer1.close()
 
-#µÚ¶þ²½£ºmap woe value
+
+# µÚ¶þ²½£ºmap woe value
 from math import isnan
+
+
 def var_woe(x, bin_dic, not_in_list):
     val = None
     if pd.isnull(x) or isnan(x):
@@ -613,7 +634,7 @@ def agg_func(x):
 
 
 def df_woe2(filepath, output_file, flag_name, bin_file, data_test, not_var_list=[], not_in_list=[], target_var_list=[],
-           flag_var_list=['custr_nbr']):
+            flag_var_list=['custr_nbr']):
     """
     :param flag_name: bad flag
     :param data_test/data_train: target data
@@ -625,7 +646,7 @@ def df_woe2(filepath, output_file, flag_name, bin_file, data_test, not_var_list=
     :return:
     """
     output_filename = filepath + "/" + output_file
-    #writer = pd.ExcelWriter("{}.xlsx".format(output_filename))
+    # writer = pd.ExcelWriter("{}.xlsx".format(output_filename))
     flag_var_list.append(flag_name)
     data_woe_test = data_test[flag_var_list]
     var_list = data_test.columns.tolist()
@@ -669,11 +690,10 @@ def df_woe2(filepath, output_file, flag_name, bin_file, data_test, not_var_list=
     return data_woe_test
 
 
-
-#map woe
-#df=pd.read_csv('/home/bangsun/RoyGao/widetable.csv')
-#df=df.fillna(-99998)
-#df_woe('.','wide_table','flag_ever_d30','info_wide_table.xlsx', df,not_var_list=['id_card','id_name','id_phone'],
+# map woe
+# df=pd.read_csv('/home/bangsun/RoyGao/widetable.csv')
+# df=df.fillna(-99998)
+# df_woe('.','wide_table','flag_ever_d30','info_wide_table.xlsx', df,not_var_list=['id_card','id_name','id_phone'],
 #       not_in_list=['-99998','-99998.0',-99998,-99998.0], target_var_list=[],
 #             flag_var_list=['loan_id'])
 
@@ -772,17 +792,14 @@ def delete_inconsistent_coefficient(df_train, var_list, flag_name):
 
 def variance_inflation_factor(exog, exog_idx):
     '''variance inflation factor, VIF, for one exogenous variable
-
     The variance inflation factor is a measure for the increase of the
     variance of the parameter estimates if an additional variable, given by
     exog_idx is added to the linear regression. It is a measure for
     multicollinearity of the design matrix, exog.
-
     One recommendation is that if VIF is greater than 5, then the explanatory
     variable given by exog_idx is highly collinear with the other explanatory
     variables, and the parameter estimates will have large standard errors
     because of this.
-
     Parameters
     ----------
     exog : ndarray, (nobs, k_vars)
@@ -790,24 +807,19 @@ def variance_inflation_factor(exog, exog_idx):
         regression
     exog_idx : int
         index of the exogenous variable in the columns of exog
-
     Returns
     -------
     vif : float
         variance inflation factor
-
     Notes
     -----
     This function does not save the auxiliary regression.
-
     See Also
     --------
     xxx : class for regression diagnostics  TODO: doesn't exist yet
-
     References
     ----------
     http://en.wikipedia.org/wiki/Variance_inflation_factor
-
     '''
     k_vars = exog.shape[1]
     x_i = exog[:, exog_idx]
@@ -890,7 +902,7 @@ def func_stepwise_1(cols, df_, code, sort):
     sorted_cols_filter = [i for i in sorted_cols if re.match('^WOE_i', i) or re.match('^WOE_m', i)]
     sorted_cols_leave = list(set(sorted_cols) - set(sorted_cols_filter))
     sorted_cols_filter.extend(sorted_cols_leave)
-    #print sorted_cols_filter
+    # print sorted_cols_filter
     for i in sorted_cols_filter:
         # if re.match('^WOE_i',i) or re.match('^WOE_m',i):
         # print 'has looped to '+str(i)
@@ -912,8 +924,8 @@ def func_stepwise_1(cols, df_, code, sort):
     x_train = sm.add_constant(x_train)
     logit = sm.Logit(df_[code], x_train)
     result = logit.fit()
-    #print((result.summary()))
-    #print(('aic:' + str(result.aic)))
+    # print((result.summary()))
+    # print(('aic:' + str(result.aic)))
     return train_cols
 
 
@@ -929,14 +941,15 @@ def cal_score(yp_train, flag, base_score, double_score, odds):
     df_rs = rs.copy()
     df_rs.loc[:, 'p_'] = p_
     df_rs.loc[:, 'log_odds'] = np.log(df_rs.loc[:, 'p'] / df_rs.loc[:, 'p_'])
-    df_rs.loc[:, 'score'] = np.array([A for _ in range(len(df_rs))]) - np.array([B for _ in range(len(df_rs))]) * np.log(
+    df_rs.loc[:, 'score'] = np.array([A for _ in range(len(df_rs))]) - np.array(
+        [B for _ in range(len(df_rs))]) * np.log(
         df_rs.loc[:, 'p'] / df_rs.loc[:, 'p_'])
     df_rs['score'] = df_rs['score'].apply(lambda x: int(x))
     return df_rs, A, B
 
 
 def binning_person(col, cut_num):
-    colBin = pd.qcut(col, cut_num,duplicates='drop')
+    colBin = pd.qcut(col, cut_num, duplicates='drop')
     return colBin
 
 
@@ -1170,7 +1183,8 @@ def get_AR_KS_res_amount(df_train, df_test, var_list, flag_name, cut_num, score_
     score_list = info_train['score'].tolist()
     # return score_list
     #     score_value=[x.replace('[','').replace(']','').split(',') for x in score_list]
-    score_value = [str(x).replace('(', '').replace('[', '').replace(')', '').replace(']', '').split(',') for x in score_list]
+    score_value = [str(x).replace('(', '').replace('[', '').replace(')', '').replace(']', '').split(',') for x in
+                   score_list]
     score_value_list = [[float(mm) for mm in x] for x in score_value]
     ks_max_train = info_train['KS'].max()
     auc_train = info_train['AUC'].sum()
@@ -1263,7 +1277,8 @@ def get_AR_KS_res_score(df_train, df_test, var_list, flag_name, cut_num, score_t
     res_train = get_data_4_ar_ks_score(df_train_score, cut_num, score_trigger)
     info_train = get_AR_KS(res_train)
     score_list = info_train['score'].tolist()
-    score_value = [str(x).replace("(", "").replace(")", "").replace('[', '').replace(']', '').split(',') for x in score_list]
+    score_value = [str(x).replace("(", "").replace(")", "").replace('[', '').replace(']', '').split(',') for x in
+                   score_list]
     score_value_list = [[float(mm) for mm in x] for x in score_value]
     ks_max_train = info_train['KS'].max()
     auc_train = info_train['AUC'].sum()
@@ -1370,8 +1385,6 @@ def filter_by_corr(df_, series_, corr_limit=0.7):
     return [i for i in series_ if i not in drop_set]
 
 
-
-
 ####deal with the variables
 def select_var_part(df_woe_train, df_woe_test, filepath, output_file, flag_name, iv_file, vif_threshold,
                     score_trigger, base_score, double_score, exclude_var, target_var_list, odds_value, cut_num=10,
@@ -1388,13 +1401,13 @@ def select_var_part(df_woe_train, df_woe_test, filepath, output_file, flag_name,
         var_list = list(set(list_var) - set(exclude_var))
     series_ = list(set(iv_info_s['var']))
     df_train_ss = df_woe_train[var_list]
-    #print var_list
+    # print var_list
     corr_filter_var = filter_by_corr(df_train_ss, series_, corr_limit)
     print('=====================================================================================================')
     print(('corr_var', corr_filter_var))
     print('=====================================================================================================')
     vif_selected_var = cal_vif_value(corr_filter_var, df_woe_train, vif_threshold, dic_iv_rank)
-    #print vif_selected_var
+    # print vif_selected_var
     coef_selected_var = delete_inconsistent_coefficient(df_woe_train, vif_selected_var, flag_name)
     print('=====================================================================================================')
     print(('delete none positive', coef_selected_var))
@@ -1413,13 +1426,13 @@ def select_var_part(df_woe_train, df_woe_test, filepath, output_file, flag_name,
     res_param = res_final_model_score[2]
     nn = res_param.shape[0]
     iv_detail = pd.read_excel(iv_file, 'bin_detail')
-    iv_detail['WOE']=iv_detail['WOE'].replace('inf',0)
-    iv_detail['WOE']=iv_detail['WOE'].replace('-inf',0)
+    iv_detail['WOE'] = iv_detail['WOE'].replace('inf', 0)
+    iv_detail['WOE'] = iv_detail['WOE'].replace('-inf', 0)
     i = 0
     for var in final_selected_var:
         iv_var = iv_detail[iv_detail['var'] == var][['Bin', 'var', 'WOE', 'bad_rate', 'bad', 'good']]
         var_param = res_param[var]
-        iv_var['score']= (A - B*res_param['const'])/ (nn-1) - var_param * iv_var['WOE'] * B
+        iv_var['score'] = (A - B * res_param['const']) / (nn - 1) - var_param * iv_var['WOE'] * B
         iv_var.to_excel(writer, 'model_var_score', startrow=i)
         len_df = iv_var.shape[0] + 1
         i += len_df + 2
@@ -1432,31 +1445,39 @@ def select_var_part(df_woe_train, df_woe_test, filepath, output_file, flag_name,
     res_final_model_score[4].to_excel(writer, 'model_tsetset_indicator_score')
     df_woe.to_excel(writer, 'bin_detail')
     # df_iv.to_excel(writer,'iv_psi_info')
-    writer.save()        
+    writer.save()
     writer.close()
     return final_selected_var
 
 
 def scorecard2sql(iv_file):
-    df1=pd.read_excel(iv_file,sheet_name='model_var_score',index_col=0)
-    df1=df1[(df1['Bin'].isna()==False)&(df1['Bin']!='Bin')]
-    df1.reset_index(drop=True,inplace=True)
+    df1 = pd.read_excel(iv_file, sheet_name='model_var_score', index_col=0)
+    df1 = df1[(df1['Bin'].isna() == False) & (df1['Bin'] != 'Bin')]
+    df1.reset_index(drop=True, inplace=True)
     for i in df1.index.tolist():
-        if df1.loc[i, 1] != df1.loc[i-1, 1]:
+        if df1.loc[i, 1] != df1.loc[i - 1, 1]:
             print(',case ', end='')
         if ',' in str(df1.loc[i, 0]):
             if '-inf' in str(df1.loc[i, 0]):
-                print('when '+str(df1.loc[i, 'var'])+' <= '+df1.loc[i,0].strip('(]').split(',')[1]+' then '+str(df1.loc[i, 'score']))
+                print('when ' + str(df1.loc[i, 'var']) + ' <= ' + df1.loc[i, 0].strip('(]').split(',')[
+                    1] + ' then ' + str(df1.loc[i, 'score']))
             elif 'inf' in str(df1.loc[i, 0]):
-                print('when '+str(df1.loc[i, 'var'])+' > '+df1.loc[i,0].strip('(]').split(',')[0]+' then '+str(df1.loc[i, 'score']))
+                print(
+                    'when ' + str(df1.loc[i, 'var']) + ' > ' + df1.loc[i, 0].strip('(]').split(',')[0] + ' then ' + str(
+                        df1.loc[i, 'score']))
             else:
-                print('when '+str(df1.loc[i,'var'])+' between '+df1.loc[i,0].strip('(]').split(',')[0]+' and '+df1.loc[i, 0].strip('(]').split(',')[1] + ' then '+str(df1.loc[i,'score']))
-        elif (df1.loc[i,'Bin'] == '-99998')|(df1.loc[i,'Bin']=='-99998.0')|(df1.loc[i, 'Bin']==-99998):
-            print('when '+str(df1.loc[i,'var'])+' is null or  length('+str(df1.loc[i, 'var'])+')=0 then '+str(df1.loc[i, 'score']))
+                print(
+                    'when ' + str(df1.loc[i, 'var']) + ' between ' + df1.loc[i, 0].strip('(]').split(',')[0] + ' and ' +
+                    df1.loc[i, 0].strip('(]').split(',')[1] + ' then ' + str(df1.loc[i, 'score']))
+        elif (df1.loc[i, 'Bin'] == '-99998') | (df1.loc[i, 'Bin'] == '-99998.0') | (df1.loc[i, 'Bin'] == -99998):
+            print(
+                'when ' + str(df1.loc[i, 'var']) + ' is null or  length(' + str(df1.loc[i, 'var']) + ')=0 then ' + str(
+                    df1.loc[i, 'score']))
         else:
-            print('when '+str(df1.loc[i,'var'])+" = '"+str(df1.loc[i, 'Bin'])+"' then "+str(df1.loc[i, 'score']))
-        if i == df1.shape[0]-1:
+            print('when ' + str(df1.loc[i, 'var']) + " = '" + str(df1.loc[i, 'Bin']) + "' then " + str(
+                df1.loc[i, 'score']))
+        if i == df1.shape[0] - 1:
             print('end')
             break
-        if df1.loc[i, 1] != df1.loc[i+1, 1]:
+        if df1.loc[i, 1] != df1.loc[i + 1, 1]:
             print('end')

@@ -8,6 +8,7 @@
 
 import os
 import sys
+
 sys.path.append("..")
 
 from multiprocessing import Pool, cpu_count, Manager
@@ -15,16 +16,18 @@ import pandas as pd
 import numpy as np
 import datetime
 
-from BaseUtils import log
+# from BaseUtils import log
 from itertools import combinations
 
+
 class MonotonicWoe(object):
-    def __init__(self, df_train, df_test, target_name, del_col, dist_col, serial_col, df_ott=None, filne_name=None, na_value=None, max_bins=5, min_rate=0.01, min_bins_cnt=50):
-        self.log = log
+    def __init__(self, df_train, df_test, target_name, del_col, dist_col, serial_col, df_ott=None, filne_name=None,
+                 na_value=None, max_bins=5, min_rate=0.01, min_bins_cnt=50):
+        #         self.log = log
 
         ## 检查y列
         if not target_name:
-            print("爸，你清醒一点，没有lable列啦！")
+            self.log.info("爸，你清醒一点，没有lable列啦！")
             sys.exit(0)
         else:
             self.target_name = target_name
@@ -34,56 +37,63 @@ class MonotonicWoe(object):
         if set(del_col).intersection(set(df_train.columns.tolist())) == set(del_col):
             self.del_col = list(set(del_col))
         else:
-            print("del_col中{}特征列没有在df_train.columns当中".format(set(del_col).difference(set(df_train.columns.tolist()))))
+            self.log.info(
+                "del_col中{}特征列没有在df_train.columns当中".format(set(del_col).difference(set(df_train.columns.tolist()))))
             sys.exit(0)
 
         if set(dist_col).intersection(set(df_train.columns.tolist())) == set(dist_col):
             self.dist_col = dist_col
         else:
-            print(
+            self.log.info(
                 "dist_col中{}特征列没有在df_train.columns当中".format(set(dist_col).difference(set(df_train.columns.tolist()))))
             sys.exit(0)
 
         if set(serial_col).intersection(set(df_train.columns.tolist())) == set(serial_col):
             self.serial_col = serial_col
         else:
-            print(
+            self.log.info(
                 "serial_col中{}特征列没有在df_train.columns当中".format(
                     set(serial_col).difference(set(df_train.columns.tolist()))))
             sys.exit(0)
 
+        if not na_value:
+            self.na_value = -99998
+            self.na_value_list = [-99998, "-99998"]
+            self.log.info("没有显示缺失值提示，默认用-99998代入;将执行df=df.fillna(-99998)")
+        elif na_value.isdigit():
+            self.na_value = na_value
+            self.na_value_list = [na_value, str(na_value), float(na_value)]
+        ## 留一个空荡，多类缺失值
+        # else:
+        #     self.na_value = [na_value]
+
         self._check_y(df_train)
-        self.df_train = df_train[self.del_col + self.dist_col + self.serial_col]
-        self.df_train = self.df_train.reset_index()
+        df_train = df_train[self.del_col + self.dist_col + self.serial_col]
+        self.df_train = self._format_df(df_train)
+        self.df_train_woe = self.df_train[[self.target_name]]
 
         if df_test is not None and isinstance(df_test, pd.DataFrame):
             self._check_y(df_test)
-            self.df_test = df_test[self.del_col + self.dist_col + self.serial_col]
+            df_test = df_test[self.del_col + self.dist_col + self.serial_col]
+            self.df_test = self._format_df(df_test)
+            self.df_test_woe = self.df_test[[self.target_name]]
         else:
-            self.df_test = False
-            print("啊哦，没有测试训练集～")
+            self.df_test = pd.DataFrame()
+            self.log.info("啊哦，没有测试训练集～")
 
         if df_ott is not None and isinstance(df_ott, pd.DataFrame):
             self._check_y(df_ott)
-            self.df_ott = df_ott[self.del_col + self.dist_col + self.serial_col]
+            df_ott = df_ott[self.del_col + self.dist_col + self.serial_col]
+            self.df_ott = self._format_df(df_ott)
+            self.df_ott_woe = self.df_ott[[self.target_name]]
         else:
-            self.df_ott = False
-            print("好棒！没有跨时间验证窗口的数据～")
+            self.df_ott = pd.DataFrame()
+            self.log.info("好棒！没有跨时间验证窗口的数据～")
 
         if filne_name:
             self.filename = filne_name
         else:
             self.filename = "model" + datetime.datetime.today().strftime("%Y%m%d")
-
-        if not na_value:
-            self.na_value = -99998
-            self.na_value_list = [-99998, "-99998"]
-            print("没有显示缺失值提示，默认用-99998代入;将执行df=df.fillna(-99998")
-        elif na_value.isdigit():
-            self.na_value = na_value
-            self.na_value_list = [na_value, str(na_value)]
-        else:
-            self.na_value = [na_value]
 
         self.max_bins = max_bins
         self.min_rate = min_rate
@@ -93,6 +103,19 @@ class MonotonicWoe(object):
         if len(tmp_df[self.target_name].unique()) != 2:
             self.log.info("旁友，你有点多心哦，本对象只适用于二分类！")
 
+    def _format_df(self, df):
+        df = pd.DataFrame(df, dtype=str)
+        df[self.target_name] = df[self.target_name].apply(int)
+        df.replace('\\N', self.na_value, inplace=True)
+        df.replace('none', self.na_value, inplace=True)
+        df.replace('nan', self.na_value, inplace=True)
+        for col in self.dist_col:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except:
+                pass
+        df = df.reset_index()
+        return df
 
     ## 离散变量woe转化，针对self.dist_col
     def dist_woe_caculation(self):
@@ -101,11 +124,8 @@ class MonotonicWoe(object):
         good_count = len(self.df_train) - bad_count
         self.dist_woe_df = pd.DataFrame(columns=["feature", "values", "total", "bad", "bad_rate", "good",
                                                  "bad_pct", "good_pct", "WOE", 'IV', 'rank'])
-        stime = datetime.datetime.now()
+
         for index, i in enumerate(self.dist_col):
-            data[i] = data[i].astype(str)
-            if index % 10 == 0:
-                self.log.info("Now is dealing the n~10th feature:{}".format(i))
             tmp1 = data[[i, self.target_name, "index"]]
             tmp2 = tmp1[self.target_name].groupby([tmp1[i]]).agg(["sum", "count"]).reset_index()
             tmp2.rename(columns={"sum": "bad", "count": "total", i: "values"}, inplace=True)
@@ -130,48 +150,60 @@ class MonotonicWoe(object):
             tmp2 = tmp2[
                 ["feature", "values", "total", "bad", "bad_rate", "good", "bad_pct", "good_pct", "WOE", 'IV', 'rank']]
             tmp2 = tmp2.sort_values('rank')
-            # data[i] = data.merge(tmp2, how='left', left_on=i, right_on="values")['WOE']
-            # df_test[i] = df_test.merge(tmp2, how='left', left_on=i, right_on="values")['WOE']
+            self.df_train_woe[i] = self.df_train.merge(tmp2, how='left', left_on=i, right_on="values")['WOE']
+
+            if self.df_test.any().any():
+                self.df_test_woe[i] = self.df_test.merge(tmp2, how='left', left_on=i, right_on="values")['WOE']
+
+            if self.df_ott.any().any():
+                self.df_ott_woe[i] = self.df_ott.merge(tmp2, how='left', left_on=i, right_on="values")['WOE']
             self.dist_woe_df = pd.concat([self.dist_woe_df, tmp2])
-        etime = datetime.datetime.now()
         self.dist_woe_df.to_excel("{}_DistBin.xlsx".format(self.filename))
-        self.log.info("Dist_col woe has been finished, cost {} seconds!".format((etime-stime).seconds))
         self.log.info("The dist_col woe result can be checked in {}_DistBin.xlsx".format(self.filename))
         del data
 
-        ## 连续变量woe转化，针对self.serial_col
-
+    ## 连续变量woe转化，针对self.serial_col
     def serial_woe_caculation(self):
-        pull_num = min(4, cpu_count() - 1)
-        self.log.info("CPU内核数:{}，本次掉用{}进程".format(cpu_count(), pull_num))
+        pull_num = min(3, cpu_count() - 2)
+        self.log.info("CPU内核数:{}，本次调用{}进程".format(cpu_count(), pull_num))
         self.log.info("仰天长笑，哈哈哈，CPU要飞起来啦！！！请做好降温防暑工作")
-        p = Pool(pull_num)
 
-        self.m = Manager().dict()
-        bin_min = Manager().list()
-        bin_max = Manager().list()
-        bin_name = Manager().list()
-        bad = Manager().list()
-        good = Manager().list()
-        feature = Manager().list()
+        with Manager() as manager:
+            m = manager.dict()
+            cons = manager.dict()
 
-        stime = datetime.datetime.now()
-        for col in self.serial_col:
-            p.apply_async(self._multi_woe, args=(col, bin_min, bin_max, bin_name, bad, good, feature))
-        p.close()
-        p.join()
-        etime = datetime.datetime.now()
-        self.log.info("分箱已结束，用时{}秒".format((etime-stime).seconds))
-        serial_df = pd.DataFrame(columns=["bin_min", "bin_max", "bin_name", "bad", "good", "feature"],
-                                 data={"bin_min": list(bin_min), "bin_max": list(bin_max),
-                                       "bin_name": list(bin_name), "bad": list(bad), "good": list(good),
-                                       "feature": list(feature)})
-        # 入最终df
-        self.serial_df = serial_df.sort_values(by=["feature", "bin_min"])
+            p = Pool(pull_num)
+            for col in self.serial_col:
+                p.apply_async(self._multi_woe, args=(col, m, cons,))
+            p.close()
+            p.join()
 
-    def _multi_woe(self, col, bin_min, bin_max, bin_name, bad, good, feature):
+            best_knots_df = dict(m)
+            self.conditions = dict(cons)
+
+        self.serial_df = pd.DataFrame(
+            columns=["feature", "bin_name", "bad", "bad_rate", "good", "good_pct", "bad_pct", "woe", "iv", "ks"])
+        for key, value in best_knots_df.items():
+            self.serial_df = pd.concat([self.serial_df, value[
+                ["feature", "bin_name", "bad", "bad_rate", "good", "good_pct", "bad_pct", "woe", "iv", "ks"]]])
+            data = self.df_train[[key]]
+            data[key] = data[key].astype(float)
+            self.df_train_woe[key] = eval(self.conditions[key])
+            if self.df_test.any().any():
+                data = self.df_test[[key]]
+                data[key] = data[key].astype(float)
+                self.df_test_woe[key] = eval(self.conditions[key])
+            if self.df_ott.any().any():
+                data = self.df_ott[[key]]
+                data[key] = data[key].astype(float)
+                self.df_ott_woe[key] = eval(self.conditions[key])
+        self.serial_df.to_excel("{}_SerialBin.xlsx".format(self.filename))
+        self.log.info("The serial_col woe result can be checked in {}_SerialBin.xlsx".format(self.filename))
+
+    def _multi_woe(self, col, m, cons):
         data = self.df_train[[col, self.target_name]]
-        print('process now is {} and the feature is {}.'.format(os.getpid(), col))
+        self.log.info('子进程: {} - 特征{}'.format(os.getpid(), col))
+
         cut_point = []
         work_data = data[self.target_name].groupby([data[col], data[self.target_name]]).count()
         work_data = work_data.unstack().reset_index().fillna(0)
@@ -179,14 +211,6 @@ class MonotonicWoe(object):
         na_df = work_data[work_data[col].isin(self.na_value_list)]
         non_na_df = work_data[~work_data[col].isin(self.na_value_list)]
         non_na_df[col] = non_na_df[col].astype(float)
-        if not (na_df.values[0][1] == 0 or na_df.values[0][2] == 0):
-            cut_point.append(self.na_value)
-            bin_name.append(str(self.na_value))
-            bin_min.append(np.nan)
-            bin_max.append(np.nan)
-            bad.append(na_df.values[0][2])
-            good.append(na_df.values[0][1])
-            feature.append(col)
 
         ## 对non_na_df进行处理
         total_len = sum(work_data['good']) + sum(work_data['bad'])
@@ -208,6 +232,13 @@ class MonotonicWoe(object):
                 best_knots = knots_list[int(np.argmax(filtered_IV))]
                 break
         if best_knots:
+            bin_name, bad, good = [], [], []
+            if not (na_df.values[0][1] == 0 or na_df.values[0][2] == 0):
+                cut_point.append(self.na_value)
+                bin_name.append(str(self.na_value))
+                good.append(na_df.values[0][1])
+                bad.append(na_df.values[0][2])
+
             cut_point.extend([non_na_df[col][best_knots[i]] for i in range(1, len(best_knots))])
             for i in range(1, len(best_knots)):
                 if i == 1:
@@ -216,19 +247,44 @@ class MonotonicWoe(object):
                     left_margin, right_margin = non_na_df[col][best_knots[i - 1]], float("inf")
                 else:
                     left_margin, right_margin = non_na_df[col][best_knots[i - 1]], non_na_df[col][best_knots[i]]
-                bin_name.append("(" + str(left_margin) + "," + str(right_margin) + "]")
-                bin_min.append(left_margin)
-                bin_max.append(right_margin)
                 tmp = non_na_df[
                     (non_na_df[col].astype(float) > left_margin) & (non_na_df[col].astype(float) <= right_margin)]
+                bin_name.append("(" + str(left_margin) + "," + str(right_margin) + "]")
                 good.append(sum(tmp["good"]))
                 bad.append(sum(tmp["bad"]))
-                feature.append(col)
         else:
-            print("该特征{}无法进行有效单调分箱".format(col))
-            self.del_col.append(col)
+            self.log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>该特征{}无法进行有效分箱".format(col))
         if cut_point:
-            self.m[col] = cut_point
+            tmp = pd.DataFrame(columns=["bin_name", "bad", "good"],
+                               data={"bin_name": bin_name, "bad": bad, "good": good})
+            total_good = tmp.good.sum()
+            total_bad = tmp.bad.sum()
+            tmp["total"] = tmp.good + tmp.bad
+            tmp["bad_rate"] = tmp.bad / tmp.total
+            tmp["good_cumsum"] = np.cumsum(tmp["good"])
+            tmp["bad_cumsum"] = np.cumsum(tmp["bad"])
+            tmp["good_pct"] = tmp.good / total_good
+            tmp["bad_pct"] = tmp.bad / total_bad
+            tmp["woe"] = tmp.apply(
+                lambda x: float("inf") if x['bad_pct'] == 0 else np.log(x['good_pct'] / x['bad_pct']), axis=1)
+            tmp["ks"] = np.abs(tmp.good_pct - tmp.bad_pct)
+            tmp['iv'] = (tmp['good_pct'] - tmp['bad_pct']) * tmp['woe']
+            tmp["feature"] = col
+            m[col] = tmp
+
+            ## 组中conditions
+            condition = ""
+            for index, row in tmp.iterrows():
+                if row["bin_name"] in mw.na_value_list:
+                    condition = condition + "np.where(data['{}'].isin(self.na_value_list), float('{}'),".format(
+                        row["feature"], row["woe"])
+                else:
+                    bin_min = row["bin_name"].split(',')[0].replace("(", "")
+                    bin_max = row["bin_name"].split(',')[1].replace("]", "")
+                    condition = condition + "np.where((data['{}']>float('{}')) & (data['{}']<=float('{}')), float('{}'),".format(
+                        row["feature"], bin_min, row["feature"], bin_max, row["woe"])
+            condition = condition + 'np.nan' + ')' * len(tmp)
+            cons[col] = condition
 
     ## 迭代找到最优分割点
     def _best_ks_knots(self, data, total_len, current_rate, start_knot, end_knot, current_time):
@@ -282,4 +338,3 @@ class MonotonicWoe(object):
             return None
         else:
             return sum(IV_series)
-
