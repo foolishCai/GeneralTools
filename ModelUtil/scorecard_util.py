@@ -707,8 +707,9 @@ class ScorecardUtil(object):
         plt.title('ROC curve')
         plt.legend(loc="lower right")
 
-        plt.show()
         plt.savefig(file_name)
+        plt.show()
+
 
     def feature_report(self):
         writer = pd.ExcelWriter("{}_feature.xlsx".format(self.filename))

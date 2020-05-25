@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/monotonic_woe_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -161,7 +161,9 @@
       <workItem from="1589965932848" duration="3989000" />
       <workItem from="1589980068492" duration="832000" />
       <workItem from="1589982480433" duration="11259000" />
-      <workItem from="1590112758104" duration="8039000" />
+      <workItem from="1590112758104" duration="10493000" />
+      <workItem from="1590134099827" duration="929000" />
+      <workItem from="1590144977879" duration="1657000" />
     </task>
     <servers />
   </component>
