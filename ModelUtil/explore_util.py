@@ -22,12 +22,25 @@ from ModelUtil.draw_util import format_dataframe
 
 ## 特征分析
 class OriginExplore(object):
-    def __init__(self, df, target_name="y", ids_cols=[], time_col="create_date", time_level="m", isChange=True, max_col_null_pct=0.8, max_row_null_pct=0.8,
+    def __init__(self, df, target_name="y", del_col=[], dist_col=[], serial_col=[], time_col="create_date", time_level="m", isChange=True, max_col_null_pct=0.8, max_row_null_pct=0.8,
                  max_null_pct_delta=0.3, max_various_values=100,
                  corr_threshold=0.75, vif_threshold=10, psi_threshold=0.2, ks_threshold=0.05):
         self.df = df
         self.df.rename(columns={target_name: "y"}, inplace=True)
-        self.ids_cols = ids_cols
+        self.del_col = del_col
+
+        if not dist_col:
+            self.get_object_cols()
+        else:
+            self.dist_col = dist_col
+
+        if not serial_col:
+            self.serial_col = [i for i in self.df.columns if i not in self.del_col and i not in self.dist_col]
+            for col in self.serial_col:
+                self.df[col] = self.df[col].astype(float)
+        else:
+            self.serial_col = serial_col
+
         self.log = log
         self.max_col_null_pct = max_col_null_pct
         self.max_row_null_pct = max_row_null_pct
@@ -43,7 +56,7 @@ class OriginExplore(object):
                 self.df["format_date"] = self.df[self.time_col].map(lambda x: get_std_time(x, level=self.time_level))
                 self.time_col = time_col
                 self.time_level = time_level
-                self.ids_cols.append('format_date')
+                self.del_col.append('format_date')
                 self.psi_threshold = psi_threshold
                 self.ks_threshold = ks_threshold
             except:
@@ -67,14 +80,11 @@ class OriginExplore(object):
             self.observe_y_by_time()
         self.observe_all_nulls()
         self.observe_null_by_y()
-        self.get_object_cols()
         self.get_single_various_values()
         self.get_null_cols_rows()
         self.output_objects()
 
     def go_deep_explore(self):
-        deleted_cols = list(set(self.single_cols + self.various_cols + self.q0equalq99_col + [i[0] for i in self.to_drop_cols]))
-        self.real_object_cols = [i for i in self.real_object_cols if i not in deleted_cols]
         self.get_corr_explore()
         self.get_vif_explore()
         if self.time_col and self.time_level:
@@ -148,10 +158,10 @@ class OriginExplore(object):
     def get_object_cols(self):
         data = self.df.copy()
         init_object_cols = list(data.columns[data.dtypes == 'object'])
-        self.real_object_cols = []
+        self.dist_col = []
         unreal_objects_col = []
         for col in init_object_cols:
-            if col in self.ids_cols:
+            if col in self.del_col:
                 continue
             else:
                 try:
@@ -160,10 +170,10 @@ class OriginExplore(object):
                     else:
                         unreal_objects_col.append(col)
                 except:
-                    self.real_object_cols.append(col)
+                    self.dist_col.append(col)
         if not self.isChange and len(unreal_objects_col):
             self.log.info("这些离散变量可以处理:{}".format(unreal_objects_col))
-        self.log.info("处理以后剩下的离散变量共{}个，分别是：{}".format(len(self.real_object_cols), self.real_object_cols))
+        self.log.info("处理以后剩下的离散变量共{}个，分别是：{}".format(len(self.dist_col), self.dist_col))
         self.log.info("*"*50)
         del data
 
@@ -172,23 +182,21 @@ class OriginExplore(object):
         data = self.df.copy()
         self.single_cols = []
         self.various_cols = []
-        self.q0equalq99_col = []
+        self.q5equalq95_col = []
         for col in data.columns:
-            if col in self.ids_cols:
+            tmp_ = data[~data[col].isnull()][col]
+
+            if col in self.del_col:
                 continue
+            elif col in self.dist_col:
+                if len(tmp_.head(100).unique()) > self.max_various_values:
+                    self.various_cols.append(col)
+                elif len(tmp_.unique()) > self.max_various_values:
+                    self.various_cols.append(col)
             else:
-                if len(data[col].head(100).unique()) == 1:
-                    if len(data[col].unique()) == 1:
-                        self.single_cols.append(col)
-                if col in self.real_object_cols:
-                    if len(data[col].head(100).unique()) > self.max_various_values:
-                        self.various_cols.append(col)
-                    elif len(data[col].unique()) > self.max_various_values:
-                        self.various_cols.append(col)
-                else:
-                    quantile00, quantile99 = data[col].quantile([.0, .99])
-                    if quantile00 == quantile99:
-                        self.q0equalq99_col.append(col)
+                quantile00, quantile99 = tmp_.quantile([.5, .95])
+                if quantile00 == quantile99:
+                    self.q5equalq95_col.append(col)
         if self.single_cols:
             self.log.info("有{}个特征为唯一值,分别如下{}:".format(len(self.single_cols), self.single_cols))
             self.log.info("*" * 50)
@@ -199,11 +207,11 @@ class OriginExplore(object):
             self.log.info("*" * 50)
             if self.isChange:
                 self.df = self.df.drop(self.various_cols, axis=1)
-        if self.q0equalq99_col:
-            self.log.info("有{}个连续特征无明显差异,分别如下{}".format(len(self.q0equalq99_col), self.q0equalq99_col))
+        if self.q5equalq95_col:
+            self.log.info("有{}个连续特征无明显差异,分别如下{}".format(len(self.q5equalq95_col), self.q5equalq95_col))
             self.log.info("*" * 50)
             if self.isChange:
-                self.df = self.df.drop(self.q0equalq99_col, axis=1)
+                self.df = self.df.drop(self.q5equalq95_col, axis=1)
         del data
 
     ## 特征缺失率情况
@@ -250,7 +258,10 @@ class OriginExplore(object):
 
     ## 连续特征相关性
     def get_corr_explore(self):
-        data = self.df.drop(self.real_object_cols + self.ids_cols, axis=1)
+        deleted_cols = list(
+            set(self.single_cols + self.various_cols + self.q5equalq95_col + [i[0] for i in
+                                                                              self.to_drop_cols] + self.dist_col))
+        data = self.df.drop(deleted_cols, axis=1)
         cols = list(data.columns)
         corrlist = [(x, y, data[[x, y]].corr().iloc[0, 1]) for x, y in zip(cols, cols[1:])]
         high_corr_df = pd.DataFrame(data={"col1": [i[0] for i in corrlist],
@@ -268,7 +279,10 @@ class OriginExplore(object):
 
     ## 连续特征VIF
     def get_vif_explore(self):
-        data = self.df.drop(self.real_object_cols + self.ids_cols, axis=1)
+        deleted_cols = list(
+            set(self.single_cols + self.various_cols + self.q5equalq95_col + [i[0] for i in
+                                                                              self.to_drop_cols] + self.dist_col))
+        data = self.df.drop(deleted_cols, axis=1)
         if data.isnull().any().max() == 1:
             self.log.info("该样本还包含null值，暂用-1填充")
             data = data.fillna(-1)
@@ -287,7 +301,7 @@ class OriginExplore(object):
         date_cols = sorted(list(self.df.format_date.unique()))
 
         psi_df = pd.DataFrame(columns=date_cols[1:])
-        data = self.df[[i for i in self.real_object_cols if i in self.df.columns] + ["format_date"]]
+        data = self.df[[i for i in self.dist_col if i in self.df.columns] + ["format_date"]]
         for col in list(data.columns):
             data[col] = data[col].astype(str)
             ratio_list = list((data[col].groupby([data.format_date]).agg(["count"]) / data.shape[0])["count"])
@@ -298,7 +312,7 @@ class OriginExplore(object):
 
         ks_df = pd.DataFrame(columns=date_cols[1:])
         data = self.df[
-            [i for i in list(self.df.columns) if i not in self.real_object_cols and i not in self.ids_cols] + [
+            [i for i in list(self.df.columns) if i not in self.dist_col and i not in self.del_col] + [
                 "format_date"]]
         for col in list(data.columns):
             ks_values = [
@@ -327,6 +341,6 @@ class OriginExplore(object):
         self.log.info("无法转化为连续(float)的特征: {}.real_object_cols".format(self.__class__.__name__))
         self.log.info("有唯一值的特征: {}.single_cols".format(self.__class__.__name__))
         self.log.info("value值过多的特征: {}.various_cols".format(self.__class__.__name__))
-        self.log.info("分布无明显变化的特征: {}.q0equalq99_col".format(self.__class__.__name__))
+        self.log.info("分布无明显变化的特征: {}.q5equalq95_col".format(self.__class__.__name__))
         self.log.info("缺失率过高的特征: {}.to_drop_cols".format(self.__class__.__name__))
         self.log.info("缺失率过高的行: {}.to_drop_rows".format(self.__class__.__name__))

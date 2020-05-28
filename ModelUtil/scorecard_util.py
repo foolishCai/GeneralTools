@@ -315,8 +315,8 @@ class MonotonicWoe(object):
             return []
         else:
             data_len = sum(data["good"]) + sum(data["bad"])
-            start_add_num = sum(np.cumsum(tmp_df["good"] + tmp_df["bad"]) < 0.007 * data_len)
-            end_add_num = sum(np.cumsum(tmp_df["good"] + tmp_df["bad"]) <= tmp_df_len - 0.007 * data_len)
+            start_add_num = sum(np.cumsum(tmp_df["good"] + tmp_df["bad"]) < current_rate * data_len)
+            end_add_num = sum(np.cumsum(tmp_df["good"] + tmp_df["bad"]) <= tmp_df_len - current_rate * data_len)
             processed_start_knot = start_knot + start_add_num
             processed_end_knot = start_knot + end_add_num - 1
             if processed_end_knot >= processed_start_knot:
@@ -537,27 +537,86 @@ class ScorecardUtil(object):
 
     ## 预测分数，进行模型评估
     def pred_evaluate(self):
+        from scToolkits.att_sc_draw import get_curve, get_feature_importance, get_cm
+
         x_data = self.df_train_woe[self.final_features]
         x_data = sm.add_constant(x_data)
         self.train_y_pred = self.model.predict(x_data).tolist()
-        self._draw_report(y_true=self.df_train_woe[self.label], y_pred=self.train_y_pred,
-                          file_name="{}_train_report.png".format(self.filename))
+        get_curve(y_true=self.df_train_woe[self.label], y_pred=self.train_y_pred,
+                  file_name="{}_train_report.png".format(self.filename))
+
+        from sklearn.metrics import roc_curve
+        fpr, tpr, threshold = roc_curve(y_true=self.df_train_woe[self.label], y_score=self.train_y_pred)
+        thresh = sorted(self.train_y_pred)[int(np.argmax(abs(fpr - tpr)))]
+
+        get_cm(y_true=self.df_train_woe[self.label], y_pred=self.train_y_pred, thresh=thresh)
+
+        report_df = pd.DataFrame(columns=["precision", "recall", "accuracy", "f1_score"])
+        report_df = pd.concat([pd.DataFrame(data={"precision": [precision_score(y_true=self.df_train_woe[self.label],
+                                                                                y_pred=[int(i > thresh) for i in
+                                                                                        list(self.train_y_pred)])],
+                                                  "recall": [recall_score(y_true=self.df_train_woe[self.label],
+                                                                          y_pred=[int(i > thresh) for i in
+                                                                                  list(self.train_y_pred)])],
+                                                  "accuracy": [accuracy_score(y_true=self.df_train_woe[self.label],
+                                                                              y_pred=[int(i > thresh) for i in
+                                                                                      list(self.train_y_pred)])],
+                                                  "f1_score": [f1_score(y_true=self.df_train_woe[self.label],
+                                                                        y_pred=[int(i > thresh) for i in
+                                                                                list(self.train_y_pred)])]
+                                                  }, index=["train"]), report_df])
 
         if self.df_test_woe.any().any():
             x_data = self.df_test_woe[self.final_features]
             x_data = self._check_row_na(x_data)
+            self.df_test_woe = self.df_test_woe[self.df_test_woe.index.isin(x_data.index.tolist())]
             x_data = sm.add_constant(x_data)
             self.test_y_pred = self.model.predict(x_data).tolist()
-            self._draw_report(y_true=self.df_test_woe[self.label], y_pred=self.test_y_pred,
-                              file_name="{}_test_report.png".format(self.filename))
+            get_curve(y_true=self.df_test_woe[self.label], y_pred=self.test_y_pred,
+                      file_name="{}_test_report.png".format(self.filename))
+            get_cm(y_true=self.df_test_woe[self.label], y_pred=self.test_y_pred, thresh=thresh)
+            report_df = pd.concat([pd.DataFrame(data={"precision": [
+                precision_score(y_true=self.df_test_woe[self.label],
+                                y_pred=[int(i > thresh) for i in list(self.test_y_pred)])],
+                "recall": [recall_score(y_true=self.df_test_woe[self.label],
+                                        y_pred=[int(i > thresh) for i in
+                                                list(self.test_y_pred)])],
+                "accuracy": [accuracy_score(y_true=self.df_test_woe[self.label],
+                                            y_pred=[int(i > thresh) for i in
+                                                    list(self.test_y_pred)])],
+                "f1_score": [f1_score(y_true=self.df_test_woe[self.label],
+                                      y_pred=[int(i > thresh) for i in
+                                              list(self.test_y_pred)])]
+            }, index=["test"]), report_df])
 
         if self.df_ott_woe.any().any():
             x_data = self.df_ott_woe[self.final_features]
             x_data = self._check_row_na(x_data)
+            self.df_ott_woe = self.df_ott_woe[self.df_ott_woe.index.isin(x_data.index.tolist())]
             x_data = sm.add_constant(x_data)
             self.ott_y_pred = self.model.predict(x_data).tolist()
-            self._draw_report(y_true=self.df_ott_woe[self.label], y_pred=self.ott_y_pred,
-                              file_name="{}_ott_report.png".format(self.filename))
+            get_curve(y_true=self.df_ott_woe[self.label], y_pred=self.ott_y_pred,
+                      file_name="{}_ott_report.png".format(self.filename))
+            get_cm(y_true=self.df_ott_woe[self.label], y_pred=self.ott_y_pred, thresh=thresh)
+            report_df = pd.concat([pd.DataFrame(data={"precision": [
+                precision_score(y_true=self.df_ott_woe[self.label],
+                                y_pred=[int(i > thresh) for i in list(self.ott_y_pred)])],
+                "recall": [recall_score(y_true=self.df_ott_woe[self.label],
+                                        y_pred=[int(i > thresh) for i in
+                                                list(self.ott_y_pred)])],
+                "accuracy": [accuracy_score(y_true=self.df_ott_woe[self.label],
+                                            y_pred=[int(i > thresh) for i in
+                                                    list(self.ott_y_pred)])],
+                "f1_score": [f1_score(y_true=self.df_ott_woe[self.label],
+                                      y_pred=[int(i > thresh) for i in
+                                              list(self.ott_y_pred)])]
+            }, index=["ott"]), report_df])
+
+        params = self.model.params.reset_index()
+        params.columns = ["var", "coef"]
+        get_feature_importance(feature=list(params["var"])[1:], importance=list(params["coef"])[1:],
+                               filename="{}_feature_importance.png".format(self.filename))
+        print(report_df)
 
     def _check_row_na(self, data):
         rows_null_percent = data.isnull().sum(axis=1) / data.shape[1]
