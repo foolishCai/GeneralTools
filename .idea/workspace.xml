@@ -2,16 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q1_twoSum.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q287_findDuplicate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q394_decodeString.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q974_subarraysDivByK.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ModelUtil/KdTree.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q1431_kidsWithCandies.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/explore_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/explore_util.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/draw_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/draw_util.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LeetCodeQA/.idea/LeetCodeQA.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../LeetCodeQA/.idea/LeetCodeQA.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LeetCodeQA/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../LeetCodeQA/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LeetCodeQA/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../LeetCodeQA/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/woe_bins cr.wangxj.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,16 +36,17 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/configs" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/configs" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/notImportance" />
       <recent name="$PROJECT_DIR$/WorkProjects/configs" />
       <recent name="$PROJECT_DIR$/WorkUtils" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/configs" />
     </key>
   </component>
   <component name="RunManager">
@@ -180,7 +177,8 @@
       <workItem from="1590545204932" duration="211000" />
       <workItem from="1590582263625" duration="103000" />
       <workItem from="1590582474177" duration="44000" />
-      <workItem from="1590628816065" duration="6698000" />
+      <workItem from="1590628816065" duration="7378000" />
+      <workItem from="1591000914582" duration="387000" />
     </task>
     <servers />
   </component>

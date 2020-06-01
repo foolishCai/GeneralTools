@@ -19,18 +19,33 @@ from itertools import combinations
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import pickle
 import math
-
+from sklearn.metrics import precision_score, recall_score, accuracy_score, f1_score
 
 from BaseUtils import log
 
 
-
 class MonotonicWoe(object):
-    def __init__(self, df_train, target_name, del_col, dist_col, serial_col, df_test=None, df_ott=None, filne_name=None,
+    def __init__(self, df_train, target_name, del_col, dist_col, serial_col, df_test=None, df_ott=None, file_name=None,
                  na_value=None, max_bins=5, min_rate=0.01, min_bins_cnt=50, max_process=2):
         self.log = log
 
-        ## 检查y列
+        """
+        df_train:       训练集
+        target_name:    y
+        del_col:        不需要分箱的列
+        dist_col:       离散变量
+        serial_col:     连续变量
+        df_test:        测试集
+        df_ott:         跨时间验证的数据集
+        file_name:      文件名字
+        na_value:       缺失值
+        max_bins:       最大分箱数
+        min_rate:       最小分箱占比
+        min_bins_cnt:   每箱最少绝对值数量
+        max_process:    最大进程数
+        """
+
+        # 检查y列
         if not target_name:
             self.log.info("爸，你清醒一点，没有lable列啦！")
             sys.exit(0)
@@ -38,7 +53,7 @@ class MonotonicWoe(object):
             self.target_name = target_name
             del_col.append(target_name)
 
-        ## 检查特征列
+        # 检查特征列
         if set(del_col).intersection(set(df_train.columns.tolist())) == set(del_col):
             self.del_col = list(set(del_col))
         else:
@@ -68,7 +83,7 @@ class MonotonicWoe(object):
         elif na_value.isdigit():
             self.na_value = na_value
             self.na_value_list = [na_value, str(na_value), float(na_value)]
-        ## 留一个空荡，多类缺失值
+        # 留一个口子，多类缺失值
         # else:
         #     self.na_value = [na_value]
 
@@ -95,8 +110,8 @@ class MonotonicWoe(object):
             self.df_ott = pd.DataFrame()
             self.log.info("好棒！没有跨时间验证窗口的数据～")
 
-        if filne_name:
-            self.filename = filne_name
+        if file_name:
+            self.filename = file_name
         else:
             self.filename = "model" + datetime.datetime.today().strftime("%Y%m%d")
 
@@ -124,11 +139,13 @@ class MonotonicWoe(object):
         df = df.reset_index()
         return df
 
-    ## 离散变量woe转化，针对self.dist_col
+    # 离散变量woe转化，针对self.dist_col
     def dist_woe_caculation(self):
         data = self.df_train[self.dist_col + [self.target_name] + ["index"]]
         bad_count = self.df_train[self.target_name].sum()
         good_count = len(self.df_train) - bad_count
+
+        # 离散变量的分箱结果
         self.dist_woe_df = pd.DataFrame(columns=["feature", "bin_name", "total", "bad", "bad_rate", "good",
                                                  "bad_pct", "good_pct", "woe", 'iv', 'rank'])
 
@@ -149,7 +166,7 @@ class MonotonicWoe(object):
             else:
                 tmp2.loc[:, 'bad_pct'] = tmp2['bad'] / bad_count
             tmp2.loc[:, 'woe'] = tmp2.apply(
-                lambda x: float("inf") if x['bad_pct'] == 0 else np.log(x['good_pct'] / x['bad_pct']), axis=1)
+                lambda x: float("inf") if x['bad_pct'] == 0 else float("-inf") if x['good_pct'] == 0 else np.log(x['good_pct'] / x['bad_pct']), axis=1)
             tmp2.loc[:, 'rank'] = tmp2.bad_rate.rank(axis=0, method='first')
             tmp2.loc[:, 'ks'] = 0
             tmp2.loc[:, 'feature'] = i
@@ -165,29 +182,38 @@ class MonotonicWoe(object):
             if self.df_ott.any().any():
                 self.df_ott_woe[i] = self.df_ott.merge(tmp2, how='left', left_on=i, right_on="bin_name")['woe']
             self.dist_woe_df = pd.concat([self.dist_woe_df, tmp2])
-        self.dist_woe_df.to_excel("{}_DistBin.xlsx".format(self.filename))
 
         del data
 
-    ## 连续变量woe转化，针对self.serial_col
+    # 连续变量woe转化，针对self.serial_col
     def serial_woe_caculation(self):
         self.log.info("仰天长笑，哈哈哈，CPU要飞起来啦！！！请做好降温防暑工作")
 
         with Manager() as manager:
             m = manager.dict()
             cons = manager.dict()
-            fill_woe_value = manager.dict()
+            # fill_woe_value = manager.dict()
 
             p = Pool(self.pull_num)
             for col in self.serial_col:
-                p.apply_async(self._multi_woe, args=(col, m, cons, fill_woe_value))
+                p.apply_async(self._multi_woe, args=(col, m, cons))
             p.close()
             p.join()
 
+            """
+            best_knots_df：    每个特征的分箱点；key值为特征，value值分箱点的index值
+            conditions：       映射条件句，key值为特征，value值为np.where执行语句
+            # fill_values：      处理na_value时出现的inf问题，key值为特征，value值为该箱中的y情况
+            #                    特征若为空值的样本单独成一箱，这一箱在y上有三种表现：
+            #                    1. 全部为good - fill_values的value值为0 - woe取float("inf")
+            #                    2. 全部为bad - fill_values的value值为1 - woe取float("-inf")
+            #                    3. 有正有负，有正常的woe值
+            """
             best_knots_df = dict(m)
             conditions = dict(cons)
-            fill_values = dict(fill_woe_value)
+            # fill_values = dict(fill_woe_value)
 
+        # 连续变量的分箱结果
         self.serial_df = pd.DataFrame(
             columns=["feature", "bin_name", "bad", "bad_rate", "good", "good_pct", "bad_pct", "woe", "iv", "ks"])
         for key, value in best_knots_df.items():
@@ -196,23 +222,23 @@ class MonotonicWoe(object):
             data = self.df_train[[key]]
             data[key] = data[key].astype(float)
             self.df_train_woe[key] = eval(conditions[key])
-            if self.df_train_woe[key].isnull().max():
-                self.df_train_woe[key] = self.df_train_woe[key].fillna(value[value.feature==key].woe.max() if fill_values[key]==1 else value[value.feature==key].woe.min())
+            # if self.df_train_woe[key].isnull().max():
+            #     self.df_train_woe[key] = self.df_train_woe[key].fillna(float("-inf") if fill_values[key] == 1 else float("inf"))
             if self.df_test.any().any():
                 data = self.df_test[[key]]
                 data[key] = data[key].astype(float)
                 self.df_test_woe[key] = eval(conditions[key])
-                if self.df_test_woe[key].isnull().max():
-                    self.df_test_woe[key]=self.df_test_woe[key].fillna(value[value.feature==key].woe.max() if fill_values[key]==1 else value[value.feature==key].woe.min())
+                # if self.df_test_woe[key].isnull().max():
+                #     self.df_test_woe[key] = self.df_test_woe[key].fillna(float("-inf") if fill_values[key] == 1 else float("inf"))
             if self.df_ott.any().any():
                 data = self.df_ott[[key]]
                 data[key] = data[key].astype(float)
                 self.df_ott_woe[key] = eval(conditions[key])
-                if self.df_ott_woe[key].isnull().max():
-                    self.df_ott_woe[key] = self.df_ott_woe[key].fillna(value[value.feature==key].woe.max() if fill_values[key]==1 else value[value.feature==key].woe.min())
-        self.serial_df.to_excel("{}_SerialBin.xlsx".format(self.filename))
+                # if self.df_ott_woe[key].isnull().max():
+                #     self.df_ott_woe[key] = self.df_ott_woe[key].fillna(float("-inf") if fill_values[key] == 1 else float("inf"))
 
-    def _multi_woe(self, col, m, cons, fill_woe_value):
+
+    def _multi_woe(self, col, m, cons):
         data = self.df_train[[col, self.target_name]]
         # self.log.info('子进程: {} - 特征{}'.format(os.getpid(), col))
 
@@ -220,6 +246,15 @@ class MonotonicWoe(object):
         work_data = data[self.target_name].groupby([data[col], data[self.target_name]]).count()
         work_data = work_data.unstack().reset_index().fillna(0)
         work_data.columns = [col, 'good', 'bad']
+
+        """
+        na_df：     特征为空的情况
+        non_na_df： 特征不为空的情况，针对这部分进行分箱
+        分箱基本思路：
+        1. 以non_na_df的index键作为主键进行识别，将连续变量视为离散变量
+        2. 计算每个离散点符合各个分箱条件的ks值
+        3. 对最后所有的ks值进行全排序，找出最大iv的组合
+        """
         na_df = work_data[work_data[col].isin(self.na_value_list)]
 
         non_na_df = work_data[~work_data[col].isin(self.na_value_list)]
@@ -227,7 +262,7 @@ class MonotonicWoe(object):
         non_na_df = non_na_df.sort_values(by=[col], ascending=True)
         non_na_df = non_na_df.reset_index(drop=True)
 
-        ## 对non_na_df进行处理
+        # 对non_na_df进行处理
         total_len = sum(work_data['good']) + sum(work_data['bad'])
         current_rate = min(self.min_rate, self.min_bins_cnt / total_len)
         tmp_result = self._best_ks_knots(non_na_df, total_len=total_len, current_rate=current_rate, start_knot=0,
@@ -235,7 +270,8 @@ class MonotonicWoe(object):
         tmp_result = [x for x in tmp_result if x is not None]
         tmp_result.sort()
         return_piece_num = min(self.max_bins, len(tmp_result) + 1)
-        ## cost alot time
+
+        # cost a lot time
         best_knots = []
         for current_piece_num in sorted(list(range(2, return_piece_num + 1)), reverse=True):
             knots_list = list(combinations(tmp_result, current_piece_num - 1))
@@ -249,15 +285,17 @@ class MonotonicWoe(object):
                 break
         if best_knots:
             bin_name, bad, good = [], [], []
-            if not (na_df.values[0][1] == 0 or na_df.values[0][2] == 0):
-                cut_point.append(self.na_value)
-                bin_name.append(str(self.na_value))
-                good.append(na_df.values[0][1])
-                bad.append(na_df.values[0][2])
-            elif na_df.values[0][1] > 0:
-                fill_woe_value[col] = 0
-            elif na_df.values[0][2] > 0:
-                fill_woe_value[col] = 1
+            # if not (na_df.values[0][1] == 0 or na_df.values[0][2] == 0):
+            cut_point.append(self.na_value)
+            bin_name.append(str(self.na_value))
+            good.append(na_df.values[0][1])
+            bad.append(na_df.values[0][2])
+            # elif na_df.values[0][1] > 0:
+            #     # 所有都是good样本
+            #     # fill_woe_value[col] = 0
+            # elif na_df.values[0][2] > 0:
+            #     # 所有都是bad样本
+            #     fill_woe_value[col] = 1
 
             cut_point.extend([non_na_df[col][best_knots[i]] for i in range(1, len(best_knots))])
             for i in range(1, len(best_knots)):
@@ -272,41 +310,41 @@ class MonotonicWoe(object):
                 bin_name.append("(" + str(left_margin) + "," + str(right_margin) + "]")
                 good.append(sum(tmp["good"]))
                 bad.append(sum(tmp["bad"]))
+            if cut_point:
+                tmp = pd.DataFrame(columns=["bin_name", "bad", "good"],
+                                   data={"bin_name": bin_name, "bad": bad, "good": good})
+                total_good = tmp.good.sum()
+                total_bad = tmp.bad.sum()
+                tmp["total"] = tmp.good + tmp.bad
+                tmp["bad_rate"] = tmp.bad / tmp.total
+                tmp["good_cumsum"] = np.cumsum(tmp["good"])
+                tmp["bad_cumsum"] = np.cumsum(tmp["bad"])
+                tmp["good_pct"] = tmp.good / total_good
+                tmp["bad_pct"] = tmp.bad / total_bad
+                tmp["woe"] = tmp.apply(
+                    lambda x: float("inf") if x['bad_pct'] == 0 else float("-inf") if x['good_pct'] == 0 else np.log(x['good_pct'] / x['bad_pct']), axis=1)
+                tmp["ks"] = np.abs(tmp.good_pct - tmp.bad_pct)
+                tmp['iv'] = (tmp['good_pct'] - tmp['bad_pct']) * tmp['woe']
+                tmp["feature"] = col
+                m[col] = tmp
+
+                # 组中conditions
+                condition = ""
+                for index, row in tmp.iterrows():
+                    if row["bin_name"] in self.na_value_list:
+                        condition = condition + "np.where(data['{}'].isin(self.na_value_list), float('{}'),".format(
+                            row["feature"], row["woe"])
+                    else:
+                        bin_min = row["bin_name"].split(',')[0].replace("(", "")
+                        bin_max = row["bin_name"].split(',')[1].replace("]", "")
+                        condition = condition + "np.where((~data['{}'].isin(self.na_value_list)) & (data['{}']>float('{}')) & (data['{}']<=float('{}')), float('{}'),".format(
+                            row["feature"], row["feature"], bin_min, row["feature"], bin_max, row["woe"])
+                condition = condition + 'np.nan' + ')' * len(tmp)
+                cons[col] = condition
         else:
             self.log.info("！！！！！！！！！！该特征{}无法进行有效分箱".format(col))
-        if cut_point:
-            tmp = pd.DataFrame(columns=["bin_name", "bad", "good"],
-                               data={"bin_name": bin_name, "bad": bad, "good": good})
-            total_good = tmp.good.sum()
-            total_bad = tmp.bad.sum()
-            tmp["total"] = tmp.good + tmp.bad
-            tmp["bad_rate"] = tmp.bad / tmp.total
-            tmp["good_cumsum"] = np.cumsum(tmp["good"])
-            tmp["bad_cumsum"] = np.cumsum(tmp["bad"])
-            tmp["good_pct"] = tmp.good / total_good
-            tmp["bad_pct"] = tmp.bad / total_bad
-            tmp["woe"] = tmp.apply(
-                lambda x: float("inf") if x['bad_pct'] == 0 else np.log(x['good_pct'] / x['bad_pct']), axis=1)
-            tmp["ks"] = np.abs(tmp.good_pct - tmp.bad_pct)
-            tmp['iv'] = (tmp['good_pct'] - tmp['bad_pct']) * tmp['woe']
-            tmp["feature"] = col
-            m[col] = tmp
 
-            ## 组中conditions
-            condition = ""
-            for index, row in tmp.iterrows():
-                if row["bin_name"] in self.na_value_list:
-                    condition = condition + "np.where(data['{}'].isin(self.na_value_list), float('{}'),".format(
-                        row["feature"], row["woe"])
-                else:
-                    bin_min = row["bin_name"].split(',')[0].replace("(", "")
-                    bin_max = row["bin_name"].split(',')[1].replace("]", "")
-                    condition = condition + "np.where((~data['{}'].isin(self.na_value_list)) & (data['{}']>float('{}')) & (data['{}']<=float('{}')), float('{}'),".format(
-                        row["feature"], row["feature"], bin_min, row["feature"], bin_max, row["woe"])
-            condition = condition + 'np.nan' + ')' * len(tmp)
-            cons[col] = condition
-
-    ## 迭代找到最优分割点
+    # 迭代找到最优分割点
     def _best_ks_knots(self, data, total_len, current_rate, start_knot, end_knot, current_time):
         tmp_df = data.loc[start_knot:end_knot]
         tmp_df_len = sum(tmp_df["good"]) + sum(tmp_df["bad"])
@@ -338,7 +376,7 @@ class MonotonicWoe(object):
             lower_result = []
         return upper_result + [new_knot] + lower_result
 
-    ## 计算IV
+    # 计算IV
     def _IV_calculator(self, data_df, knots_list):
         temp_df_list = []
         for i in range(1, len(knots_list)):
@@ -359,21 +397,46 @@ class MonotonicWoe(object):
         else:
             return sum(IV_series)
 
+    def output_bin_file(self):
+        dist_df = self.dist_woe_df.copy()
+        dist_df["ks"] = 0
+        serial_df = self.serial_df.copy()
+        woe_df = pd.concat([dist_df[["feature", "bin_name", "woe", "iv", "ks", "bad", "good", "bad_rate"]],
+                            serial_df[["feature", "bin_name", "woe", "iv", "ks", "bad", "good", "bad_rate"]]])
+        self.woe_df = pd.DataFrame(columns=["feature", "bin_name", "woe", "iv", "ks", "bad", "good", "bad_rate"])
+        writer = pd.ExcelWriter("{}_bin_result.xlsx".format(self.filename))
+        i = 0
+        for var in list(woe_df.feature.unique()):
+            tmp = woe_df[woe_df['feature'] == var]
+            woe_list = tmp["woe"].tolist()
+            if float("inf") in woe_list or float("-inf") in woe_list:
+                woe_list = [i for i in woe_list if i not in [float("inf"), float("-inf")]]
+            min_woe, max_woe = min(woe_list), max(woe_list)
+            tmp["iv"] = tmp.iv.map(lambda x: 0 if x in([float("inf"), float("-inf")]) else x)
+            tmp["woe"] = tmp.woe.map(lambda x: min_woe if x == float("-inf") else max_woe if x == float("inf") else x)
+            tmp.to_excel(writer, 'allBin', startrow=i)
+            len_df = tmp.shape[0] + 1
+            i += len_df + 2
+            self.woe_df = pd.concat(self.woe_df, tmp)
+
+        self.dist_woe_df.to_excel(writer, 'DistBin')
+        self.serial_df.to_excel(writer, 'SerialBin')
+        writer.save()
+        writer.close()
+
 
     def main(self):
-        stime = datetime.datetime.now()
 
+        stime = datetime.datetime.now()
         self.log.info(">>>>>>>>>>>>>>>>>离散变量分箱开始<<<<<<<<<<<<<<")
         self.dist_woe_caculation()
         self.log.info("The dist_col woe result can be checked {}.dist_woe_df".format(self.__class__.__name__))
-        self.log.info("数据文件保存在{}_DistBin.xlsx".format(self.filename))
 
         self.log.info(">>>>>>>>>>>>>>>>>连续变量分箱开始<<<<<<<<<<<<<<")
         self.serial_woe_caculation()
         etime = datetime.datetime.now()
         self.log.info("最耗时part已结束！哇o～，cost time {} seconds.".format((etime-stime).seconds))
         self.log.info("The serial_col woe result can be checked {}.serial_df".format(self.__class__.__name__))
-        self.log.info("数据文件保存在{}_SerialBin.xlsx".format(self.filename))
 
         self.log.info(">>>>>>>>>>>>>>>>>WOE映射开始<<<<<<<<<<<<<<")
         self.df_train_woe.to_csv("{}_train_woe.csv".format(self.filename), sep="|", index=False)
@@ -386,6 +449,15 @@ class MonotonicWoe(object):
         if self.df_ott.any().any():
             self.df_ott_woe.to_csv("{}_ott_woe.csv".format(self.filename), sep="|", index=False)
             self.log.info("ott的数据保存在{}_ott_woe.csv".format(self.filename))
+
+        self.log.info(">>>>>>>>>>>>>>>>合并分箱文件开始<<<<<<<<<<<<<<")
+        self.log.info(">>>>>>>>>>>>>>>>该part会改变woe中inf与-inf的问题<<<<<<<<<<<<<<")
+        self.output_bin_file()
+        self.log.info("所有分箱结果可以在{}_bin_result.xlsx中查看".format(self.filename))
+        self.log.info("sheet_name = DistBin为离散特征原始分箱结果")
+        self.log.info("sheet_name = SerialBin为连续特征原始分箱结果")
+        self.log.info("sheet_name = allBin为处理过的特征分箱结果，主要是处理了inf问题")
+
 
 
 class ScorecardUtil(object):
@@ -537,13 +609,13 @@ class ScorecardUtil(object):
 
     ## 预测分数，进行模型评估
     def pred_evaluate(self):
-        from scToolkits.att_sc_draw import get_curve, get_feature_importance, get_cm
+        from ModelUtil.draw_util import get_curve, get_feature_importance, get_cm
 
         x_data = self.df_train_woe[self.final_features]
         x_data = sm.add_constant(x_data)
         self.train_y_pred = self.model.predict(x_data).tolist()
         get_curve(y_true=self.df_train_woe[self.label], y_pred=self.train_y_pred,
-                  file_name="{}_train_report.png".format(self.filename))
+                          file_name="{}_train_report.png".format(self.filename))
 
         from sklearn.metrics import roc_curve
         fpr, tpr, threshold = roc_curve(y_true=self.df_train_woe[self.label], y_score=self.train_y_pred)
@@ -552,51 +624,39 @@ class ScorecardUtil(object):
         get_cm(y_true=self.df_train_woe[self.label], y_pred=self.train_y_pred, thresh=thresh)
 
         report_df = pd.DataFrame(columns=["precision", "recall", "accuracy", "f1_score"])
-        report_df = pd.concat([pd.DataFrame(data={"precision": [precision_score(y_true=self.df_train_woe[self.label],
-                                                                                y_pred=[int(i > thresh) for i in
-                                                                                        list(self.train_y_pred)])],
-                                                  "recall": [recall_score(y_true=self.df_train_woe[self.label],
-                                                                          y_pred=[int(i > thresh) for i in
-                                                                                  list(self.train_y_pred)])],
-                                                  "accuracy": [accuracy_score(y_true=self.df_train_woe[self.label],
-                                                                              y_pred=[int(i > thresh) for i in
-                                                                                      list(self.train_y_pred)])],
-                                                  "f1_score": [f1_score(y_true=self.df_train_woe[self.label],
-                                                                        y_pred=[int(i > thresh) for i in
-                                                                                list(self.train_y_pred)])]
-                                                  }, index=["train"]), report_df])
+        report_df = pd.concat([pd.DataFrame(data={"precision": [precision_score(y_true=self.df_train_woe[self.label], y_pred=[int(i > thresh) for i in list(self.train_y_pred)])],
+                                      "recall": [recall_score(y_true=self.df_train_woe[self.label], y_pred=[int(i > thresh) for i in list(self.train_y_pred)])],
+                                      "accuracy": [accuracy_score(y_true=self.df_train_woe[self.label], y_pred=[int(i > thresh) for i in list(self.train_y_pred)])],
+                                      "f1_score": [f1_score(y_true=self.df_train_woe[self.label], y_pred=[int(i > thresh) for i in list(self.train_y_pred)])]
+                                      }, index=["train"]), report_df])
 
         if self.df_test_woe.any().any():
             x_data = self.df_test_woe[self.final_features]
-            x_data = self._check_row_na(x_data)
-            self.df_test_woe = self.df_test_woe[self.df_test_woe.index.isin(x_data.index.tolist())]
             x_data = sm.add_constant(x_data)
             self.test_y_pred = self.model.predict(x_data).tolist()
             get_curve(y_true=self.df_test_woe[self.label], y_pred=self.test_y_pred,
-                      file_name="{}_test_report.png".format(self.filename))
+                              file_name="{}_test_report.png".format(self.filename))
             get_cm(y_true=self.df_test_woe[self.label], y_pred=self.test_y_pred, thresh=thresh)
             report_df = pd.concat([pd.DataFrame(data={"precision": [
                 precision_score(y_true=self.df_test_woe[self.label],
                                 y_pred=[int(i > thresh) for i in list(self.test_y_pred)])],
-                "recall": [recall_score(y_true=self.df_test_woe[self.label],
-                                        y_pred=[int(i > thresh) for i in
-                                                list(self.test_y_pred)])],
-                "accuracy": [accuracy_score(y_true=self.df_test_woe[self.label],
-                                            y_pred=[int(i > thresh) for i in
-                                                    list(self.test_y_pred)])],
-                "f1_score": [f1_score(y_true=self.df_test_woe[self.label],
-                                      y_pred=[int(i > thresh) for i in
-                                              list(self.test_y_pred)])]
-            }, index=["test"]), report_df])
+                                                      "recall": [recall_score(y_true=self.df_test_woe[self.label],
+                                                                              y_pred=[int(i > thresh) for i in
+                                                                                      list(self.test_y_pred)])],
+                                                      "accuracy": [accuracy_score(y_true=self.df_test_woe[self.label],
+                                                                                  y_pred=[int(i > thresh) for i in
+                                                                                          list(self.test_y_pred)])],
+                                                      "f1_score": [f1_score(y_true=self.df_test_woe[self.label],
+                                                                            y_pred=[int(i > thresh) for i in
+                                                                                    list(self.test_y_pred)])]
+                                                      }, index=["test"]), report_df])
 
         if self.df_ott_woe.any().any():
             x_data = self.df_ott_woe[self.final_features]
-            x_data = self._check_row_na(x_data)
-            self.df_ott_woe = self.df_ott_woe[self.df_ott_woe.index.isin(x_data.index.tolist())]
             x_data = sm.add_constant(x_data)
             self.ott_y_pred = self.model.predict(x_data).tolist()
             get_curve(y_true=self.df_ott_woe[self.label], y_pred=self.ott_y_pred,
-                      file_name="{}_ott_report.png".format(self.filename))
+                              file_name="{}_ott_report.png".format(self.filename))
             get_cm(y_true=self.df_ott_woe[self.label], y_pred=self.ott_y_pred, thresh=thresh)
             report_df = pd.concat([pd.DataFrame(data={"precision": [
                 precision_score(y_true=self.df_ott_woe[self.label],
@@ -614,19 +674,15 @@ class ScorecardUtil(object):
 
         params = self.model.params.reset_index()
         params.columns = ["var", "coef"]
-        get_feature_importance(feature=list(params["var"])[1:], importance=list(params["coef"])[1:],
-                               filename="{}_feature_importance.png".format(self.filename))
+        get_feature_importance(feature=list(params["var"])[1:], importance=list(params["coef"])[1:], filename="{}_feature_importance.png".format(self.filename))
         print(report_df)
+
 
     def _check_row_na(self, data):
         rows_null_percent = data.isnull().sum(axis=1) / data.shape[1]
         to_drop_rows = rows_null_percent[rows_null_percent > 0]
         to_drop_rows = to_drop_rows.to_dict()
-        if to_drop_rows:
-            self.log.info(
-                "该数据集集有{}个样本仍含有缺失值，暂删除，占比{}".format(len(to_drop_rows), round(len(to_drop_rows) / data.shape[0], 4)))
-        data = data[~data.index.isin(to_drop_rows.keys())]
-        return data
+        return to_drop_rows
 
     def get_score_table(self):
         y_1 = self.df_train_woe[self.label].value_counts()[1]
@@ -728,47 +784,6 @@ class ScorecardUtil(object):
         rs['AUC'] = pd.Series(AUC, index=rs.index)
         return rs
 
-    @staticmethod
-    def _draw_report(y_true, y_pred, file_name):
-        from sklearn.metrics import roc_curve, auc
-        import matplotlib.pyplot as plt
-
-        plt.figure(figsize=(12, 6))
-        fpr, tpr, threshold = roc_curve(y_true, y_pred)
-        roc_auc = auc(fpr, tpr)
-
-        plt.subplot(121)
-        plt.xlabel('Percentage', fontsize=15)
-        plt.ylabel('tpr / fpr', fontsize=15)
-        plt.xlim(-0.01, 1.01)
-        plt.ylim(-0.01, 1.01)
-        plt.title("ks-curve", fontsize=20)
-
-        percentage = np.round(np.array(range(1, len(fpr) + 1)) / len(fpr), 4)
-        ks_delta = tpr - fpr
-        ks_index = ks_delta.argmax()
-        plt.plot([percentage[ks_index], percentage[ks_index]],
-                 [tpr[ks_index], fpr[ks_index]],
-                 color='limegreen', lw=2, linestyle='--')
-        plt.text(percentage[ks_index] + 0.02, (tpr[ks_index] + fpr[ks_index]) / 2,
-                 'ks: {0:.4f}'.format(ks_delta[ks_index]),
-                 fontsize=13)
-        plt.plot(percentage, tpr, color='dodgerblue', lw=2, label='tpr')
-        plt.plot([0, 1], [0, 1], color='darkgrey', linestyle='--')
-        plt.plot(percentage, fpr, color='tomato', lw=2, label='fpr')
-        plt.legend(fontsize='x-large')
-
-        plt.subplot(122)
-        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.4f)' % roc_auc)  ###假正率为横坐标，真正率为纵坐标做曲线
-        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('ROC curve')
-        plt.legend(loc="lower right")
-
-        plt.savefig(file_name)
-        plt.show()
-
 
     def feature_report(self):
         writer = pd.ExcelWriter("{}_feature.xlsx".format(self.filename))
@@ -797,8 +812,31 @@ class ScorecardUtil(object):
 
 
     def main(self):
+
+        self.log.info(">>>>>>>>>>>>> 检查空值")
+        to_drop_rows = self._check_row_na(self.df_train_woe)
+        if len(to_drop_rows) > 0:
+            self.log.info("训练集中有映射空值，请检查！")
+
+        if self.df_test_woe.any().any():
+            to_drop_rows = self._check_row_na(self.df_test_woe)
+            if len(to_drop_rows) > 0:
+                self.log.info(
+                    "该数据集集有{}个样本仍含有缺失值，暂删除，占比{}".format(len(to_drop_rows), round(len(to_drop_rows) / self.df_test_woe.shape[0], 4)))
+                self.df_test_woe = self.df_test_woe[self.df_test_woe.index.isin(to_drop_rows.keys())]
+
+        if self.df_ott_woe.any().any():
+            to_drop_rows = self._check_row_na(self.df_ott_woe)
+            if len(to_drop_rows) > 0:
+                self.log.info(
+                    "该数据集集有{}个样本仍含有缺失值，暂删除，占比{}".format(len(to_drop_rows),
+                                                        round(len(to_drop_rows) / self.df_ott_woe.shape[0], 4)))
+                self.df_ott_woe = self.df_ott_woe[self.df_ott_woe.index.isin(to_drop_rows.keys())]
+
+        self.log.info(">>>>>>>>>>>>> 检查inf")
         self.check_woe_value()
-        self.log.info("相关性检验, max_corr={}".format(self.max_corr))
+
+        self.log.info(">>>>>>>>>>>>> 相关性检验, max_corr={}".format(self.max_corr))
         drop_set = self.check_corr()
         if drop_set:
             self.log.info("已过滤{}个特征".format(len(drop_set)))
@@ -806,7 +844,7 @@ class ScorecardUtil(object):
             self.final_features = [i for i in list(self.iv_df.feature) if i not in self.del_col]
         self.log.info("*"*30)
 
-        self.log.info("VIF检验, max_vif={}".format(self.max_vif))
+        self.log.info(">>>>>>>>>>>>> VIF检验, max_vif={}".format(self.max_vif))
         drop_col = self.check_vif()
         if drop_col:
             self.log.info("已过滤{}个特征".format(len(drop_col)))
@@ -826,6 +864,7 @@ class ScorecardUtil(object):
             self.log.info("测试集预测结果，请查看：{}.test_y_pred".format(self.__class__.__name__))
         if self.df_ott_woe.any().any():
             self.log.info("ott预测结果，请查看：{}.ott_y_pred".format(self.__class__.__name__))
+        self.log.info("变量重要性，请查看{}_feature_importance.png".format(self.filename))
 
         self.log.info("***************基本评估指标图示如下")
         self.pred_evaluate()

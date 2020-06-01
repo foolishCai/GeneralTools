@@ -293,3 +293,59 @@ def get_correlation(df, file_name=None):
     plt.show()
     if file_name:
         plt.savefig(file_name + '.png', dpi=500)
+
+
+
+def get_curve(y_true, y_pred, file_name):
+
+        plt.figure(figsize=(12, 6))
+        fpr, tpr, threshold = roc_curve(y_true, y_pred)
+        roc_auc = auc(fpr, tpr)
+
+        plt.subplot(121)
+        plt.xlabel('Percentage', fontsize=15)
+        plt.ylabel('tpr / fpr', fontsize=15)
+        plt.xlim(-0.01, 1.01)
+        plt.ylim(-0.01, 1.01)
+        plt.title("ks-curve", fontsize=20)
+
+        percentage = np.round(np.array(range(1, len(fpr) + 1)) / len(fpr), 4)
+        ks_delta = tpr - fpr
+        ks_index = ks_delta.argmax()
+        plt.plot([percentage[ks_index], percentage[ks_index]],
+                 [tpr[ks_index], fpr[ks_index]],
+                 color='limegreen', lw=2, linestyle='--')
+        plt.text(percentage[ks_index] + 0.02, (tpr[ks_index] + fpr[ks_index]) / 2,
+                 'ks: {0:.4f}'.format(ks_delta[ks_index]),
+                 fontsize=13)
+        plt.plot(percentage, tpr, color='dodgerblue', lw=2, label='tpr')
+        plt.plot([0, 1], [0, 1], color='darkgrey', linestyle='--')
+        plt.plot(percentage, fpr, color='tomato', lw=2, label='fpr')
+        plt.legend(fontsize='x-large')
+
+        plt.subplot(122)
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.4f)' % roc_auc)  ###假正率为横坐标，真正率为纵坐标做曲线
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC curve')
+        plt.legend(loc="lower right")
+        plt.savefig(file_name)
+        plt.show()
+
+
+
+def get_cm(y_true, y_pred, thresh, file_name=None):
+    cm = confusion_matrix(list(y_true), [int(i>thresh) for i in list(y_pred)])   # 由原标签和预测标签生成混淆矩阵
+    plt.figure(figsize=(8, 6))
+    plt.matshow(cm, cmap=plt.cm.Blues)     # 画混淆矩阵，配色风格使用cm.Blues
+    plt.colorbar()    # 颜色标签
+    for x in range(len(cm)):
+        for y in range(len(cm)):
+            plt.annotate(cm[x, y], xy=(x, y), horizontalalignment='center', verticalalignment='center')
+    plt.ylabel('True label')  # 坐标轴标签
+    plt.xlabel('Predicted label')  # 坐标轴标签
+    plt.title('confusion matrix')
+    if file_name is not None:
+        plt.savefig(file_name)
+    plt.show()
