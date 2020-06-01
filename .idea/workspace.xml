@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/ModelUtil/KdTree.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q1431_kidsWithCandies.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/draw_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/draw_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/woe_bins cr.wangxj.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/KdTree.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/KdTree.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -178,7 +175,7 @@
       <workItem from="1590582263625" duration="103000" />
       <workItem from="1590582474177" duration="44000" />
       <workItem from="1590628816065" duration="7378000" />
-      <workItem from="1591000914582" duration="387000" />
+      <workItem from="1591000914582" duration="4916000" />
     </task>
     <servers />
   </component>
@@ -199,6 +196,17 @@
     </state>
     <state x="385" y="196" width="670" height="676" key="search.everywhere.popup/0.0.1440.900/-1920.0.1920.1080@0.0.1440.900" timestamp="1589434616677" />
     <state x="-1407" y="253" width="894" height="794" key="search.everywhere.popup/0.23.1400.877/-1920.23.1920.1057@-1920.23.1920.1057" timestamp="1590630562770" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/notImportance/public_basic_preprocess_0905.py</url>
+          <line>7</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/GeneralTools$makeTree.coverage" NAME="makeTree Coverage Results" MODIFIED="1577955723259" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/WorkUtils" />

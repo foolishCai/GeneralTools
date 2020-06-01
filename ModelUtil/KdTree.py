@@ -11,11 +11,15 @@ import sys
 sys.path.append("..")
 from BaseUtils import log
 
-from sklearn.neighbors import KDTree, BallTree
+import pandas as pd
 import numpy as np
 import datetime
 import operator
 import pickle
+
+from sklearn.neighbors import KDTree, BallTree
+from ModelUtil.preprocess_base import PreprocessTransformer
+from sklearn.pipeline import Pipeline
 
 class makeTree(object):
     def __init__(self, df, file_name=None, max_col_null_pct=0.8, max_row_null_pct=0.8):
@@ -106,8 +110,6 @@ class makeTree(object):
             self._save_file(self.tree, self.filename + ".pkl")
         self.log.info("The tree_model has been finished")
 
-    # def get_predict(self, ):
-
     def _save_file(self, model, file_name):
         fw = open(file_name, 'wb')
         pickle.dump(model, fw, -1)
@@ -118,3 +120,36 @@ class makeTree(object):
         self.explore_feature()
         data_train_df = self.get_standard_data()
         self.get_tree(data_train_df)
+        pipe = Pipeline([('treePipeline', KtreePipeline(self.standard_dict, self.tree))])
+        self._save_file(pipe, file_name="{}_pipeline.pkl".format(self.filename))
+        self.log.info("数据处理与预测过程均已打包，模型文件为{}_pipeline.pkl".format(self.filename))
+        self.log.info("可以直接使用该model进行transform")
+
+class KtreePipeline(PreprocessTransformer):
+    def __init__(self, standard_dict, tree_model):
+        super().__init__()
+        self.standard_dict = standard_dict
+        self.model = tree_model
+
+    def _transform_data(self, df):
+        transformed_data = pd.DataFrame(index=range(len(df)))
+        for col in self.standard_dict.keys():
+            transformed_data[col] = df[col].astype(float)
+            transformed_data.loc[transformed_data[ ~transformed_data[col].isnull()].index, col] = transformed_data[col].map(
+                lambda x: round((x - self.standard_dict[col][0]) / self.standard_dict[col][1], 2))
+            transformed_data[col] = transformed_data[col].fillna(self.standard_dict[col][0])
+        return transformed_data
+
+    def _fit(self):
+        df = self.get_X_dataframe()
+        transform_x = self._transform_data(df)
+        if self.model:
+            self.model.fit(transform_x)
+
+    def _transform(self):
+        df = self.get_transform_dataframe()
+        transformed_data = self._transform_data(df)
+        if self.model:
+            return self.model.query(transformed_data, 1)
+        else:
+            return transformed_data
