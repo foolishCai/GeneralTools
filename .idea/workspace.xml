@@ -2,9 +2,21 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q1431_kidsWithCandies.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ModelUtil/ModelEvaluation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ModelUtil/ScoreCard.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q120_minimumTotal.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q167_twoSum.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q350_intersect.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q35_searchInsert.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q96_numTrees.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/GeneralTools.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GeneralTools.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/KdTree.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/KdTree.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/explore_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/OriginExplore.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/feture_importance.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/feture_importance.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_old.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/MonotonicWoe.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,16 +49,39 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/configs" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../LeetCodeQA" />
       <recent name="$PROJECT_DIR$/notImportance" />
       <recent name="$PROJECT_DIR$/WorkProjects/configs" />
       <recent name="$PROJECT_DIR$/WorkUtils" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/configs" />
-    </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.active_fea_udf">
+    <configuration name="active_fea_udf" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pysparkProjects" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../pysparkProjects" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../LeetCodeQA/active_fea_udf.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="makeTree" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="GeneralTools" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -71,6 +106,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.active_fea_udf" />
         <item itemvalue="Python.makeTree" />
       </list>
     </recent_temporary>
@@ -175,7 +211,27 @@
       <workItem from="1590582263625" duration="103000" />
       <workItem from="1590582474177" duration="44000" />
       <workItem from="1590628816065" duration="7378000" />
-      <workItem from="1591000914582" duration="4916000" />
+      <workItem from="1591000914582" duration="5504000" />
+      <workItem from="1591066574888" duration="2000" />
+      <workItem from="1591858739015" duration="363000" />
+      <workItem from="1592448229101" duration="304000" />
+      <workItem from="1592528918191" duration="495000" />
+      <workItem from="1592559130431" duration="3000" />
+      <workItem from="1592809444606" duration="374000" />
+      <workItem from="1592815091423" duration="264000" />
+      <workItem from="1592876292109" duration="614000" />
+      <workItem from="1592987115644" duration="41000" />
+      <workItem from="1593343484702" duration="2372000" />
+      <workItem from="1593408547746" duration="27000" />
+      <workItem from="1593408589298" duration="10633000" />
+      <workItem from="1593775855059" duration="518000" />
+      <workItem from="1594201726386" duration="1261000" />
+      <workItem from="1594362398984" duration="764000" />
+      <workItem from="1594621831479" duration="880000" />
+      <workItem from="1594691723999" duration="601000" />
+      <workItem from="1594952196290" duration="419000" />
+      <workItem from="1594966649352" duration="8607000" />
+      <workItem from="1595208036954" duration="111000" />
     </task>
     <servers />
   </component>
@@ -183,6 +239,26 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
+    <state width="1398" height="304" key="GridCell.Tab.0.bottom" timestamp="1593424519419">
+      <screen x="1440" y="23" width="1920" height="1057" />
+    </state>
+    <state width="1398" height="304" key="GridCell.Tab.0.bottom/0.0.1440.900/1440.0.1920.1080@0.0.1440.900" timestamp="1593414612696" />
+    <state width="1398" height="304" key="GridCell.Tab.0.bottom/35.23.1405.877/1440.23.1920.1057@1440.23.1920.1057" timestamp="1593424519419" />
+    <state width="1398" height="304" key="GridCell.Tab.0.center" timestamp="1593424519417">
+      <screen x="1440" y="23" width="1920" height="1057" />
+    </state>
+    <state width="1398" height="304" key="GridCell.Tab.0.center/0.0.1440.900/1440.0.1920.1080@0.0.1440.900" timestamp="1593414612694" />
+    <state width="1398" height="304" key="GridCell.Tab.0.center/35.23.1405.877/1440.23.1920.1057@1440.23.1920.1057" timestamp="1593424519417" />
+    <state width="1398" height="304" key="GridCell.Tab.0.left" timestamp="1593424519415">
+      <screen x="1440" y="23" width="1920" height="1057" />
+    </state>
+    <state width="1398" height="304" key="GridCell.Tab.0.left/0.0.1440.900/1440.0.1920.1080@0.0.1440.900" timestamp="1593414612693" />
+    <state width="1398" height="304" key="GridCell.Tab.0.left/35.23.1405.877/1440.23.1920.1057@1440.23.1920.1057" timestamp="1593424519415" />
+    <state width="1398" height="304" key="GridCell.Tab.0.right" timestamp="1593424519418">
+      <screen x="1440" y="23" width="1920" height="1057" />
+    </state>
+    <state width="1398" height="304" key="GridCell.Tab.0.right/0.0.1440.900/1440.0.1920.1080@0.0.1440.900" timestamp="1593414612695" />
+    <state width="1398" height="304" key="GridCell.Tab.0.right/35.23.1405.877/1440.23.1920.1057@1440.23.1920.1057" timestamp="1593424519418" />
     <state x="-1451" y="190" key="SettingsEditor" timestamp="1589435601241">
       <screen x="-1920" y="23" width="1920" height="1057" />
     </state>
@@ -209,6 +285,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/GeneralTools$active_fea_udf.coverage" NAME="active_fea_udf Coverage Results" MODIFIED="1593414565289" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../pysparkProjects" />
     <SUITE FILE_PATH="coverage/GeneralTools$makeTree.coverage" NAME="makeTree Coverage Results" MODIFIED="1577955723259" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/WorkUtils" />
   </component>
 </project>

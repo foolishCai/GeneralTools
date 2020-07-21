@@ -6,5 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="WorkProjects" />
     <orderEntry type="module" module-name="LeetCodeQA" />
+    <orderEntry type="module" module-name="pysparkProjects" />
   </component>
 </module>

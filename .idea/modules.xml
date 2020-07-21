@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/GeneralTools.iml" filepath="$PROJECT_DIR$/.idea/GeneralTools.iml" />
       <module fileurl="file://$PROJECT_DIR$/../LeetCodeQA/.idea/LeetCodeQA.iml" filepath="$PROJECT_DIR$/../LeetCodeQA/.idea/LeetCodeQA.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../WorkProjects/.idea/WorkProjects.iml" filepath="$PROJECT_DIR$/../../WorkProjects/.idea/WorkProjects.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../pysparkProjects/.idea/pysparkProjects.iml" filepath="$PROJECT_DIR$/../pysparkProjects/.idea/pysparkProjects.iml" />
     </modules>
   </component>
 </project>

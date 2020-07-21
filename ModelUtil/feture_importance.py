@@ -78,7 +78,6 @@ class Exploratory_Data_Analysis(object):
                         early_stopping_rounds=30)  # 早停系数
 
         # 交叉验证的最优结果
-        feature_importance_values = np.zeros(len(X.columns))
         feature_importance_values = np.array(gbm.feature_importance(importance_type='gain'))
         # 输出特征评分
         imp = pd.DataFrame(X.columns.tolist(), columns=['feature'])
