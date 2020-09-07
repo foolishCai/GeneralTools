@@ -13,8 +13,10 @@ import numpy as np
 import itertools
 import seaborn as sns
 from matplotlib import rcParams
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
 from prettytable import PrettyTable
+from scipy.stats import scoreatpercentile
+import pandas as pd
 
 def format_dataframe(df):
     data = PrettyTable([''] + list(df.columns))
@@ -347,5 +349,30 @@ def get_cm(y_true, y_pred, thresh, file_name=None):
     plt.xlabel('Predicted label')  # 坐标轴标签
     plt.title('confusion matrix')
     if file_name is not None:
+        plt.savefig(file_name)
+    plt.show()
+
+
+def get_lift_curve(y_true, y_pred, file_name=None):
+    result = pd.DataFrame(columns=['target', 'proba'], data={"target": list(y_true), "proba": list(y_pred)})
+    result_ = result.copy()
+    proba_copy = result.proba.copy()
+    for i in range(10):
+        point1 = scoreatpercentile(result_.proba, i * (100 / 10))
+        point2 = scoreatpercentile(result_.proba, (i + 1) * (100 / 10))
+        proba_copy[(result_.proba >= point1) & (result_.proba <= point2)] = ((i + 1))
+    result_['grade'] = proba_copy
+    df_gain = result_.groupby(by=['grade'], sort=True).sum() / (len(result) / 10) * 100
+    plt.plot(df_gain['target'], color='red')
+    for xy in zip(df_gain['target'].reset_index().values):
+        plt.annotate("%s" % round(xy[0][1], 2), xy=xy[0], xytext=(-20, 10), textcoords='offset points')
+    # plt.plot(df_gain.index, [sum(result['target']) * 100.0 / len(result['target'])] * len(df_gain.index),
+    #              color='blue')
+    plt.plot(list(df_gain.index), [round(result.target.sum() / len(result), 4) * 100] * len(list(df_gain.index)), color="blue")
+    plt.title('Lift Curve')
+    plt.xlabel('Decile')
+    plt.ylabel('Lift Value')
+    plt.xticks([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+    if file_name:
         plt.savefig(file_name)
     plt.show()

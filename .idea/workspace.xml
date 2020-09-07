@@ -2,21 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0dd2c548-15bd-4792-b0cb-04e5f624148e" name="Default Changelist" comment=")">
-      <change afterPath="$PROJECT_DIR$/ModelUtil/ModelEvaluation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ModelUtil/ScoreCard.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q120_minimumTotal.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q167_twoSum.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q350_intersect.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q35_searchInsert.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q96_numTrees.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/GeneralTools.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GeneralTools.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q104_maxDepth.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q11_minArray.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q343_integerBreak.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q392_isSubsequence.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q64_minPathSum.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../LeetCodeQA/Q7_reverse.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/explore_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/OriginExplore.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/feture_importance.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/feture_importance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/scorecard_old.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ModelUtil/scorecard_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/MonotonicWoe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ModelUtil/draw_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/ModelUtil/draw_util.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,6 +225,7 @@
       <workItem from="1594952196290" duration="419000" />
       <workItem from="1594966649352" duration="8607000" />
       <workItem from="1595208036954" duration="111000" />
+      <workItem from="1596089064399" duration="1214000" />
     </task>
     <servers />
   </component>
