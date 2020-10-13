@@ -123,6 +123,7 @@ def delta_hours(from_dt,to_dt,from_dt_format = None,to_dt_format = None):
 
 
 def get_std_time(tmStr, level="m"):
+    tmStr = str(tmStr)
     if re.match('^\d{8}$', tmStr):
         formatDate = datetime.datetime.strptime(tmStr, "%Y%m%d")
     elif re.match('^\d{4}-\d{2}-\d{2}$', tmStr):
